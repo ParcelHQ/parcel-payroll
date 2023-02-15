@@ -46,7 +46,7 @@ abstract contract Storage {
      * @dev Storage for root nodes of approved payout merkle trees
      * Mapping of root node to boolean, true if approved, false if not
      */
-    mapping(bytes32 => bool) approvedNodes;
+    mapping(bytes32 => bool) public approvedNodes;
 
     /**
      * @dev Storage for packed payout nonces

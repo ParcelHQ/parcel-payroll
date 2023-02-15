@@ -1,8 +1,8 @@
 const { expect } = require("chai");
 const { ALLOWANCE_MODULE } = require("../../utils/constant");
 
-describe("Organizer Contract", () => {
-  describe("Onboarding Process", function () {
+describe("ApprovalManager Contract", () => {
+  describe("Approver Manager", function () {
     let organizer;
     let signers;
     const threshold = 2;
@@ -82,6 +82,27 @@ describe("Organizer Contract", () => {
       expect(approvers).to.include(operator_3.address);
       expect(approvers).to.include(operator_4.address);
       expect(approvers).to.include(operator_5.address);
+    });
+
+    it("Should not Modify if Safe Address is not Onboarded", async function () {
+      const [
+        multisig,
+        operator_1,
+        operator_2,
+        operator_3,
+        operator_4,
+        operator_5,
+        multisig_2,
+      ] = signers;
+
+      expect(
+        organizer.modifyApprovers(
+          multisig_2.address,
+          [operator_4.address, operator_5.address],
+          [operator_1.address],
+          3
+        )
+      ).to.be.revertedWith("CS009");
     });
 
     it("Should not Modify if Safe Address is not Onboarded", async function () {

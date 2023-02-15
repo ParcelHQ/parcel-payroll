@@ -75,20 +75,14 @@ contract PayrollManager is SignatureEIP712, Validators, Modifiers {
      * @param safeAddress Address of the Org
      * @param roots Array of merkle roots to validate
      * @param signatures Array of signatures to validate
-     * @param paymentTokens Array of payment tokens to fetch from Multisig
-     * @param payoutAmounts Array of payout amounts to fetch from Multisig
      */
     function validatePayouts(
         address safeAddress,
         bytes32[] memory roots,
-        bytes[] memory signatures,
-        address[] memory paymentTokens,
-        uint96[] memory payoutAmounts
+        bytes[] memory signatures
     ) external onlyOnboarded(safeAddress) {
         require(roots.length == signatures.length, "CS004");
-        require(paymentTokens.length == payoutAmounts.length, "CS004");
 
-        bool isNewAdded;
         for (uint96 i = 0; i < roots.length; i++) {
             if (!approvedNodes[roots[i]]) {
                 address signer = validatePayrollTxHashes(
@@ -97,20 +91,6 @@ contract PayrollManager is SignatureEIP712, Validators, Modifiers {
                 );
                 require(_isApprover(safeAddress, signer), "CS014");
                 approvedNodes[roots[i]] = true;
-                isNewAdded = true;
-            }
-        }
-
-        if (isNewAdded) {
-            {
-                for (uint96 index = 0; index < paymentTokens.length; index++) {
-                    execTransactionFromGnosis(
-                        safeAddress,
-                        paymentTokens[index],
-                        payoutAmounts[index],
-                        bytes("")
-                    );
-                }
             }
         }
     }
