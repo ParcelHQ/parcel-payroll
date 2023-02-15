@@ -1,0 +1,3 @@
+module.exports = {
+  ALLOWANCE_MODULE: "0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134",
+};
