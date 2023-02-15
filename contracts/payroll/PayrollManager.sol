@@ -7,8 +7,9 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./Validators.sol";
 import "../signature/Signature.sol";
 import "../interfaces/index.sol";
+import "./Modifiers.sol";
 
-contract PayrollManager is SignatureEIP712, Validators {
+contract PayrollManager is SignatureEIP712, Validators, Modifiers {
     // Utility Functions
 
     /**
@@ -83,8 +84,9 @@ contract PayrollManager is SignatureEIP712, Validators {
         bytes[] memory signatures,
         address[] memory paymentTokens,
         uint96[] memory payoutAmounts
-    ) external {
-        require(roots.length == signatures.length, "Required Signatures");
+    ) external onlyOnboarded(safeAddress) {
+        require(roots.length == signatures.length, "CS004");
+        require(paymentTokens.length == payoutAmounts.length, "CS004");
 
         bool isNewAdded;
         for (uint96 i = 0; i < roots.length; i++) {
@@ -93,7 +95,7 @@ contract PayrollManager is SignatureEIP712, Validators {
                     roots[i],
                     signatures[i]
                 );
-                require(_isApprover(safeAddress, signer), "Not an Operator");
+                require(_isApprover(safeAddress, signer), "CS014");
                 approvedNodes[roots[i]] = true;
                 isNewAdded = true;
             }
@@ -131,8 +133,8 @@ contract PayrollManager is SignatureEIP712, Validators {
         address safeAddress,
         bytes32[][] memory proof,
         bytes32[] memory roots
-    ) external {
-        require(roots.length == proof.length, "Required Proofs");
+    ) external onlyOnboarded(safeAddress) {
+        require(roots.length == proof.length, "CS004");
         bytes32 leaf = encodeTransactionData(
             to,
             tokenAddress,
@@ -140,25 +142,24 @@ contract PayrollManager is SignatureEIP712, Validators {
             payoutNonce
         );
 
-        uint96 approvals;
+        if (packedPayoutNonces.length == 0 || !getPayoutNonce(payoutNonce)) {
+            uint96 approvals;
 
-        for (uint96 i = 0; i < roots.length; i++) {
-            if (
-                MerkleProof.verify(proof[i], roots[i], leaf) &&
-                approvedNodes[roots[i]] == true
-            ) {
-                approvals += 1;
+            for (uint96 i = 0; i < roots.length; i++) {
+                if (
+                    MerkleProof.verify(proof[i], roots[i], leaf) &&
+                    approvedNodes[roots[i]] == true
+                ) {
+                    approvals += 1;
+                }
             }
-        }
 
-        if (
-            approvals >= orgs[safeAddress].approvalsRequired &&
-            (packedPayoutNonces.length == 0 || !getPayoutNonce(payoutNonce))
-        ) {
-            // Create Ether or IRC20 Transfer
-            IERC20 erc20 = IERC20(tokenAddress);
-            erc20.transfer(to, amount);
-            packPayoutNonce(true, payoutNonce);
+            if (approvals >= orgs[safeAddress].approvalsRequired) {
+                // Create Ether or IRC20 Transfer
+                IERC20 erc20 = IERC20(tokenAddress);
+                erc20.transfer(to, amount);
+                packPayoutNonce(true, payoutNonce);
+            }
         }
     }
 

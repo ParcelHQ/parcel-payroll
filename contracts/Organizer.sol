@@ -65,12 +65,12 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
                     approver != address(this) &&
                     // approver address cannot be same as previous.
                     currentapprover != approver,
-                "CS002"
+                "CS001"
             );
             // No duplicate approvers allowed.
             require(
                 orgs[safeAddress].approvers[approver] == address(0),
-                "CS003"
+                "CS002"
             );
             orgs[safeAddress].approvers[currentapprover] = approver;
             currentapprover = approver;
