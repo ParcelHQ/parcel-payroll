@@ -21,28 +21,31 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
         address[] approvers2
     );
 
-    //  new Org approver added
-    //  Orgs  Approvers modified
-    //  Orgs  Approvers removed
-    //  Deal created
-    //  Payout created
-    //  Payout executed
-    //  Payout cancelled
-    //  Deal cancelled
-    //  Orgs Offboarded
+    
+    //  Org Offboarded
     event OrgOffboarded(address indexed orgAddress);
 
-    // Custom Allowance Module Address
+    
+    /**
+        * @dev Constructor
+        * @param _allowanceAddress - Address of the Allowance Module on current Network
+        * @param _masterOperator - Address of the Master Operator
+     */
     constructor(address _allowanceAddress, address _masterOperator) {
         ALLOWANCE_MODULE = _allowanceAddress;
         MASTER_OPERATOR = _masterOperator;
     }
 
-    //  Onboard an Org
+    
+    /**
+        * @dev Onboard an Org with approvers 
+        * @param _approvers - Array of approver addresses
+        * @param approvalsRequired - Number of approvals required for a payout to be executed
+     */
     function onboard(
         address[] calldata _approvers,
         uint256 approvalsRequired
-    ) external {
+    ) external onlyMultisig(msg.sender) {
         address safeAddress = msg.sender;
 
         require(_approvers.length > 0, "CS000");
@@ -82,13 +85,16 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
         emit OrgOnboarded(safeAddress, _approvers, _approvers);
     }
 
-    // Off-board an Org
+    /**
+        * @dev Offboard an Org, remove all approvers and delete the Org
+        * @param _safeAddress - Address of the Org
+     */    
     function offboard(
         address _safeAddress
     )
         external
         onlyOnboarded(_safeAddress)
-        onlyApproverOrMultisig(_safeAddress)
+        onlyMultisig(_safeAddress)
     {
         // Remove all approvers in Orgs
         address currentapprover = orgs[_safeAddress].approvers[
