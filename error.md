@@ -30,8 +30,8 @@
 - `CS013`: `Operator does not exist`
 
 ### Approval Related
+
 - `CS014`: `Payout is not approved by a valid operator`
 - `CS015`: `Invalid Threshold Value: 0`
-
-
-
+- `CS016`: `Invalid Merkle root supplied for payout`
+- `CS017`: `Payout nonce is already used`

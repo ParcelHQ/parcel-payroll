@@ -10,7 +10,20 @@ import "../interfaces/index.sol";
 import "./Modifiers.sol";
 
 contract PayrollManager is SignatureEIP712, Validators, Modifiers {
-    // Utility Functions
+    // Null Pointer for linked list
+    bytes32 public constant NULL_BYTES = bytes32(0);
+
+    // Sentinel for linked list
+    bytes32 public constant SENTINEL_BYTES = keccak256("SENTINEL");
+
+    // Linked list of approved roots
+    mapping (bytes32 => bytes32) approvedRoots;
+    
+    // Mapping of tokens to Fetch in current cycle
+    mapping (address => uint96) public tokensToFetch;
+
+    // List of token Addresses to fetch
+    address[] paymentTokens;
 
     /**
      * @dev Set usage status of a payout nonce
@@ -161,6 +174,139 @@ contract PayrollManager is SignatureEIP712, Validators, Modifiers {
                 packPayoutNonce(true, payoutNonce);
             }
         }
+    }
+
+    /**
+     * @dev Validates and Executes a list of payouts in a single transaction
+     * @param recipients Addresses to send the funds to
+     * @param tokenAddresses Addresses of the token to send
+     * @param amounts Amounts of tokens to send
+     * @param payoutNonces Payout nonces to use
+     * @param safeAddress Address of the Org
+     * @param proofs Array of merkle proofs to validate
+     * @param roots Array of merkle roots to validate
+     * @param rootSignatures Array of signatures to validate the roots
+     */
+    function executePayouts(
+        address payable[] calldata recipients,
+        address[] calldata tokenAddresses,
+        uint256[] calldata amounts,
+        uint64[] calldata payoutNonces,
+        address safeAddress,
+        bytes32[][][] calldata proofs,
+        bytes32[][] calldata roots,
+        bytes[][] memory rootSignatures
+    ) external onlyOnboarded(safeAddress) {
+        // Validate input lengths to prevent out of bounds errors
+        require(recipients.length == tokenAddresses.length, "CS004");
+        require(recipients.length == amounts.length, "CS004");
+        require(recipients.length == payoutNonces.length, "CS004");
+        require(recipients.length == proofs.length, "CS004");
+        require(recipients.length == roots.length, "CS004");
+        require(recipients.length == rootSignatures.length, "CS004");
+
+        // Memory for Approved payouts
+        bool[] memory approvedPayouts = new bool[](recipients.length);
+
+        // Loop through all payouts
+        for (uint96 i = 0; i < recipients.length; i++) {
+
+            // If the payout nonce is already packed, revert the transaction
+            if (packedPayoutNonces.length != 0 && getPayoutNonce(payoutNonces[i])) {
+                revert("CS017");
+            }
+
+            // Initialize the number of approvals for the current payout
+            uint8 approvals = 0;
+            
+            // Get the leaf hash for the current payout
+            bytes32 leaf = encodeTransactionData(
+                recipients[i],
+                tokenAddresses[i],
+                amounts[i],
+                payoutNonces[i]
+            );
+            
+            // For each payout, loop through all roots 
+            for (uint96 j = 0; j < roots[i].length; j++) {
+                
+                // For each root, check if it is a part of approvedRoots
+                // If it is not, the mapping will return 0x00 (NULL_BYTES)
+                if (approvedRoots[roots[i][j]] == NULL_BYTES) {
+                    
+                    // Validate the root against the signature
+                    address signer = validatePayrollTxHashes(
+                        roots[i][j],
+                        rootSignatures[i][j]
+                    );
+                        // If the root is from a valid approver, add it to approvedRoots
+                        if (_isApprover(safeAddress, signer)) { 
+                            approvedRoots[roots[i][j]] = approvedRoots[SENTINEL_BYTES];
+                            approvedRoots[SENTINEL_BYTES] = roots[i][j];
+                        }
+                        // Else, revert
+                        else {
+                            revert("CS014");
+                        }
+                }
+                    // If it is part of approvedRoots, verify if current leaf is part of the root
+                if (MerkleProof.verify(proofs[i][j], roots[i][j], leaf)) {
+                    // If it is, increment approval count
+                    approvals += 1;
+                    // If the token amount to be fetched is 0, it gets added in next step.
+                    // So add the token to the paymentTokens array
+                    if (tokensToFetch[tokenAddresses[i]] == 0) {
+                        paymentTokens.push(tokenAddresses[i]);
+                    }
+
+                    // Increment amount to be fetched from the allowance module
+                    tokensToFetch[tokenAddresses[i]] += uint96(amounts[i]);
+                } else {
+                    // Else, revert
+                    revert("CS016");
+                }
+            }
+
+            // If approval count is greater than or equal to approvalsRequired, mark payout as approved
+            if (approvals >= orgs[safeAddress].approvalsRequired) {
+                approvedPayouts[i] = true;
+            }
+        }
+
+        // Fetch all tokens from the Safe
+        for (uint96 index = 0; index < paymentTokens.length; index++) {
+            execTransactionFromGnosis(
+                safeAddress,
+                paymentTokens[index],
+                tokensToFetch[paymentTokens[index]],
+                bytes("")
+            );
+            // Delete the token from the tokensToFetch array
+            delete tokensToFetch[paymentTokens[index]];
+        }
+        
+
+
+        // For each payout, if it is approved, execute it
+        for (uint96 i = 0; i < recipients.length; i++) {
+            if (approvedPayouts[i]) {
+                // Create Ether or IRC20 Transfer
+                IERC20 erc20 = IERC20(tokenAddresses[i]);
+                erc20.transfer(recipients[i], amounts[i]);
+                packPayoutNonce(true, payoutNonces[i]);
+            }
+        }
+
+        // Clean up the paymentTokens array
+        delete paymentTokens;
+
+        // Clean up the approvedRoots linked list
+        while (approvedRoots[SENTINEL_BYTES] != NULL_BYTES) {
+            bytes32 root = approvedRoots[SENTINEL_BYTES];
+            approvedRoots[SENTINEL_BYTES] = approvedRoots[root];
+            delete approvedRoots[root];
+        }
+        
     }
 
     /**
