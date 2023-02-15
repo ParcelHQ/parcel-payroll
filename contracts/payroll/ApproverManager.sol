@@ -47,16 +47,31 @@ abstract contract ApproverManager is Modifiers {
     }
 
     /**
+     * @dev Get required Threshold for Org
+     * @param _safeAddress Address of the Org
+     * @return Threshold Count
+     */
+    function getThreshold(
+        address _safeAddress
+    ) external view onlyOnboarded(_safeAddress) returns (uint256) {
+        return orgs[_safeAddress].approvalsRequired;
+    }
+
+    /**
      * @dev Modify approvers for Org
      * @param _safeAddress Address of the Org
      * @param _addressesToAdd Array of addresses to add as approvers
      * @param _addressesToRemove Array of addresses to remove as approvers
+     * @param newThreshold new threshold to updated according to new approvers
      */
     function modifyApprovers(
         address _safeAddress,
         address[] calldata _addressesToAdd,
-        address[] calldata _addressesToRemove
+        address[] calldata _addressesToRemove,
+        uint256 newThreshold
     ) public onlyOnboarded(_safeAddress) onlyMultisig(_safeAddress) {
+        require(newThreshold != 0, "CS015");
+
         for (uint256 i = 0; i < _addressesToAdd.length; i++) {
             address _addressToAdd = _addressesToAdd[i];
             require(
@@ -90,6 +105,8 @@ abstract contract ApproverManager is Modifiers {
 
             _removeApprover(_safeAddress, _addressToRemove);
         }
+
+        orgs[_safeAddress].approvalsRequired = newThreshold;
     }
 
     /**
