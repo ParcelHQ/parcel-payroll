@@ -27,5 +27,3 @@ jobs:
           cache: "npm"
       - run: npm install
       - run: npm test
-      - run: npm run coverage
-      - run: echo "Tests Run. Coverage report generated"
