@@ -34,6 +34,9 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
     constructor(address _allowanceAddress, address _masterOperator) {
         ALLOWANCE_MODULE = _allowanceAddress;
         MASTER_OPERATOR = _masterOperator;
+        
+        // Initialize approvedRoots with sentinel
+        approvedRoots[SENTINEL_BYTES] = NULL_BYTES;
     }
 
     

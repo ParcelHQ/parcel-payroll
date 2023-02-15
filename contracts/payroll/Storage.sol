@@ -56,4 +56,31 @@ abstract contract Storage {
      * If the bit is set, the payout nonce has been used, if not, it has not been used
      */
     uint256[] packedPayoutNonces;
+
+    // Null Pointer for linked list
+    bytes32 public constant NULL_BYTES = bytes32(0);
+
+    // Sentinel for linked list
+    bytes32 public constant SENTINEL_BYTES = keccak256("SENTINEL");
+
+    // Linked list of approved roots
+    mapping (bytes32 => bytes32) approvedRoots;
+    
+    // Mapping of tokens to Fetch in current cycle
+    mapping (address => uint96) public tokensToFetch;
+
+    // List of token Addresses to fetch
+    address[] paymentTokens;
+
+    // Struct for Payout
+    struct Payout {
+        address payable recipient;
+        address tokenAddress;
+        uint96 amount;
+        uint64 payoutNonce;
+        bytes32[] merkleRoots;
+        bytes32[][] merkleProofs;
+        bytes[] rootSignatures;
+    }
+
 }
