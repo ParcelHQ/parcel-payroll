@@ -54,44 +54,62 @@ describe("PayrollManager", function () {
         to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
         tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
         amount: 100,
-        payoutNonce: 1,
+        payoutNonce: 20,
       };
       const payout_2 = {
         to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
         tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
         amount: 100,
-        payoutNonce: 2,
+        payoutNonce: 21,
       };
       const payout_3 = {
         to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
         tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
         amount: 100,
-        payoutNonce: 3,
+        payoutNonce: 22,
       };
       const payout_4 = {
         to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
         tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
         amount: 100,
-        payoutNonce: 4,
+        payoutNonce: 23,
       };
       const payout_5 = {
         to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
         tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
         amount: 100,
-        payoutNonce: 5,
+        payoutNonce: 24,
       };
       const payout_6 = {
         to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
         tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
         amount: 100,
-        payoutNonce: 6,
+        payoutNonce: 25,
       };
 
       const payout_7 = {
         to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
         tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
         amount: 100,
-        payoutNonce: 13,
+        payoutNonce: 26,
+      };
+      const payout_8 = {
+        to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
+        tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
+        amount: 100,
+        payoutNonce: 27,
+      };
+      const payout_9 = {
+        to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
+        tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
+        amount: 100,
+        payoutNonce: 28,
+      };
+      const payout_10 = {
+        to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
+        tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
+        amount: 100,
+        payoutNonce: 29,
       };
 
       const encodedHash_1 = await payrollManager
@@ -159,6 +177,40 @@ describe("PayrollManager", function () {
           payout_7.amount,
           payout_7.payoutNonce
         );
+
+      console.log(encodedHash_7);
+
+      const encodedHash_8 = await payrollManager
+        .connect(operator1)
+        .encodeTransactionData(
+          payout_8.to,
+          payout_8.tokenAddress,
+          payout_8.amount,
+          payout_8.payoutNonce
+        );
+
+      console.log(encodedHash_7);
+
+      const encodedHash_9 = await payrollManager
+        .connect(operator1)
+        .encodeTransactionData(
+          payout_9.to,
+          payout_9.tokenAddress,
+          payout_9.amount,
+          payout_9.payoutNonce
+        );
+
+      console.log(encodedHash_7);
+
+      const encodedHash_10 = await payrollManager
+        .connect(operator1)
+        .encodeTransactionData(
+          payout_10.to,
+          payout_10.tokenAddress,
+          payout_10.amount,
+          payout_10.payoutNonce
+        );
+
       console.log(encodedHash_7);
 
       // Creating Root Hashes Per Approver
@@ -169,6 +221,10 @@ describe("PayrollManager", function () {
         encodedHash_4,
         encodedHash_5,
         encodedHash_6,
+        encodedHash_7,
+        encodedHash_8,
+        encodedHash_9,
+        encodedHash_10,
       ];
 
       const leaves_2 = [
@@ -178,6 +234,10 @@ describe("PayrollManager", function () {
         encodedHash_4,
         encodedHash_5,
         encodedHash_6,
+        encodedHash_7,
+        encodedHash_8,
+        encodedHash_9,
+        encodedHash_10,
       ];
 
       const tree_1 = new MerkleTree(leaves_1, ethers.utils.keccak256, {
@@ -219,26 +279,6 @@ describe("PayrollManager", function () {
         { rootHash: rootsObject[operator2.address] }
       );
 
-      console.log(operator1Sign, operator2Sign, "Signature Done");
-      //  Validation Transaction
-
-      const multiSendTransaction = [];
-
-      const validationTransaction = {
-        to: payrollManager.address,
-        value: 0,
-        data: payrollManager.interface.encodeFunctionData("validatePayouts", [
-          "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
-          [root_1, root_2],
-          [operator1Sign, operator2Sign],
-          ["0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C"],
-          [1000000],
-        ]),
-        gasLimit: 9000000,
-      };
-
-      multiSendTransaction.push(validationTransaction);
-
       //  Execution transaction
 
       const payouts = [
@@ -248,6 +288,10 @@ describe("PayrollManager", function () {
         payout_4,
         payout_5,
         payout_6,
+        payout_7,
+        payout_8,
+        payout_9,
+        payout_10,
       ];
 
       let tos = [];
@@ -284,10 +328,10 @@ describe("PayrollManager", function () {
         amounts,
         payoutNonces,
         proofs,
-        Object(rootsObject).values(),
-        Object(SignatureObject).values(),
+        Object.values(rootsObject),
+        Object.values(SignatureObject),
         ["0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C"],
-        [600],
+        [1000],
         { gasLimit: 9000000 }
       );
 

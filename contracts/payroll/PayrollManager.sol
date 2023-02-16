@@ -70,99 +70,6 @@ contract PayrollManager is SignatureEIP712, Validators, Modifiers {
         return encodedHash;
     }
 
-    /**
-     * @dev Validate the root hashes of payout data, save them and fetch the required tokens from the Gnosis Safe
-     * @param safeAddress Address of the Org
-     * @param roots Array of merkle roots to validate
-     * @param signatures Array of signatures to validate
-     * @param paymentTokens Array of payment tokens to fetch from Multisig
-     * @param payoutAmounts Array of payout amounts to fetch from Multisig
-     */
-    function validatePayouts(
-        address safeAddress,
-        bytes32[] memory roots,
-        bytes[] memory signatures,
-        address[] memory paymentTokens,
-        uint96[] memory payoutAmounts
-    ) external onlyOnboarded(safeAddress) {
-        require(roots.length == signatures.length, "CS004");
-        require(paymentTokens.length == payoutAmounts.length, "CS004");
-
-        bool isNewAdded;
-        for (uint96 i = 0; i < roots.length; i++) {
-            if (!approvedNodes[roots[i]]) {
-                address signer = validatePayrollTxHashes(
-                    roots[i],
-                    signatures[i]
-                );
-                require(_isApprover(safeAddress, signer), "CS014");
-                approvedNodes[roots[i]] = true;
-                isNewAdded = true;
-            }
-        }
-
-        if (isNewAdded) {
-            {
-                for (uint96 index = 0; index < paymentTokens.length; index++) {
-                    execTransactionFromGnosis(
-                        safeAddress,
-                        paymentTokens[index],
-                        payoutAmounts[index],
-                        bytes("")
-                    );
-                }
-            }
-        }
-    }
-
-    /**
-     * @dev Execute the payout
-     * @param to Address to send the funds to
-     * @param tokenAddress Address of the token to send
-     * @param amount Amount of tokens to send
-     * @param payoutNonce Payout nonce to use
-     * @param safeAddress Address of the Org
-     * @param proof Array of merkle proofs to validate
-     * @param roots Array of merkle roots to validate
-     */
-    function executePayout(
-        address payable to,
-        address tokenAddress,
-        uint256 amount,
-        uint64 payoutNonce,
-        address safeAddress,
-        bytes32[][] memory proof,
-        bytes32[] memory roots
-    ) external onlyOnboarded(safeAddress) {
-        require(roots.length == proof.length, "CS004");
-        bytes32 leaf = encodeTransactionData(
-            to,
-            tokenAddress,
-            amount,
-            payoutNonce
-        );
-
-        if (packedPayoutNonces.length == 0 || !getPayoutNonce(payoutNonce)) {
-            uint96 approvals;
-
-            for (uint96 i = 0; i < roots.length; i++) {
-                if (
-                    MerkleProof.verify(proof[i], roots[i], leaf) &&
-                    approvedNodes[roots[i]] == true
-                ) {
-                    approvals += 1;
-                }
-            }
-
-            if (approvals >= orgs[safeAddress].approvalsRequired) {
-                // Create Ether or IRC20 Transfer
-                IERC20 erc20 = IERC20(tokenAddress);
-                erc20.transfer(to, amount);
-                packPayoutNonce(true, payoutNonce);
-            }
-        }
-    }
-
     function bulkExecution(
         address safeAddress,
         address[] memory to,
@@ -179,14 +86,21 @@ contract PayrollManager is SignatureEIP712, Validators, Modifiers {
         require(to.length == amount.length, "Invalid Input");
         require(to.length == payoutNonce.length, "Invalid Input");
 
-        for (uint256 i = 0; i < roots.length; i++) {
-            if (!approvedNodes[roots[i]]) {
+        bool[] memory validatedRoots = new bool[](roots.length);
+        {
+            address currentApprover;
+            for (uint256 i = 0; i < roots.length; i++) {
                 address signer = validatePayrollTxHashes(
                     roots[i],
                     signatures[i]
                 );
-                require(_isApprover(safeAddress, signer), "Not an Operator");
-                approvedNodes[roots[i]] = true;
+                require(
+                    _isApprover(safeAddress, signer) &&
+                        signer > currentApprover,
+                    "Not an Operator"
+                );
+                currentApprover = signer;
+                validatedRoots[i] = true;
             }
         }
 
@@ -214,7 +128,7 @@ contract PayrollManager is SignatureEIP712, Validators, Modifiers {
             for (uint96 j = 0; j < roots.length; j++) {
                 if (
                     MerkleProof.verify(proof[i][j], roots[j], leaf) &&
-                    approvedNodes[roots[j]] == true
+                    validatedRoots[j] == true
                 ) {
                     approvals += 1;
                 }
@@ -237,10 +151,6 @@ contract PayrollManager is SignatureEIP712, Validators, Modifiers {
             if (erc20.balanceOf(address(this)) > 0) {
                 revert("");
             }
-        }
-
-        for (uint256 i = 0; i < roots.length; i++) {
-            delete approvedNodes[roots[i]];
         }
     }
 
