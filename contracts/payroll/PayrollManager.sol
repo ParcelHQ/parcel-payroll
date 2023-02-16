@@ -135,10 +135,11 @@ contract PayrollManager is SignatureEIP712, Validators, Modifiers {
             }
 
             if (approvals >= orgs[safeAddress].approvalsRequired) {
+                packPayoutNonce(true, payoutNonce);
+
                 // Create Ether or IRC20 Transfer
                 IERC20 erc20 = IERC20(tokenAddress);
                 erc20.transfer(to, amount);
-                packPayoutNonce(true, payoutNonce);
             }
         }
     }

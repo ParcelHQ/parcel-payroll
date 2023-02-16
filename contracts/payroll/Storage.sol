@@ -14,12 +14,9 @@ abstract contract Storage {
      * @param autoClaim Mapping of autoClaim
      */
     struct ORG {
-        uint256 approverCount;
+        uint128 approverCount;
+        uint128 approvalsRequired;
         mapping(address => address) approvers;
-        // mapping(address => ApprovalLevel[]) approvalMatrices;
-        uint256 approvalsRequired;
-        mapping(address => mapping(address => uint96)) claimables;
-        mapping(address => bool) autoClaim;
     }
 
     // Address of the Allowance Module
