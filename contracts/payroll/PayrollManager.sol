@@ -175,15 +175,7 @@ contract PayrollManager is SignatureEIP712, GnosisHelper, TransactionEncoder {
                 if (MerkleProof.verify(payouts[i].merkleProofs[j], payouts[i].merkleRoots[j], leaf)) {
                     // If it is, increment approval count
                     approvals += 1;
-                    // If the token amount to be fetched is 0, it gets added in next step.
-                    // So add the token to the uniqueTokenAddresses array
-                    if (tokensToFetch[payouts[i].tokenAddress] == 0) {
-                        uniqueTokenAddresses[uniqueTokenAddressesLength] = payouts[i].tokenAddress;
-                        uniqueTokenAddressesLength += 1;
-                    }
-
-                    // Increment amount to be fetched from the allowance module
-                    tokensToFetch[payouts[i].tokenAddress] += uint96(payouts[i].amount);
+                    
                 } else {
                     // Else, revert
                     revert("CS016");
@@ -194,6 +186,15 @@ contract PayrollManager is SignatureEIP712, GnosisHelper, TransactionEncoder {
             if (approvals >= orgs[safeAddress].approvalsRequired) {
                 // approvedPayouts[i] = true;
                 approvedPayoutIndexes = packBooltoUint(approvedPayoutIndexes, i+1, true);
+                // If the token amount to be fetched is 0, it gets added in next step.
+                // So add the token to the uniqueTokenAddresses array
+                if (tokensToFetch[payouts[i].tokenAddress] == 0) {
+                    uniqueTokenAddresses[uniqueTokenAddressesLength] = payouts[i].tokenAddress;
+                    uniqueTokenAddressesLength += 1;
+                }
+
+                // Increment amount to be fetched from the allowance module
+                tokensToFetch[payouts[i].tokenAddress] += uint96(payouts[i].amount);
             }
         }
 
