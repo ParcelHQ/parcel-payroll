@@ -36,7 +36,10 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
         MASTER_OPERATOR = _masterOperator;
         
         // Initialize approvedRoots with sentinel
-        approvedRoots[SENTINEL_BYTES] = NULL_BYTES;
+        approvedRoots[SENTINEL_BYTES] = SENTINEL_BYTES;
+
+        packPayoutNonce(true, 0);
+        packPayoutNonce(false, 1);
     }
 
     

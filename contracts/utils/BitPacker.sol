@@ -41,4 +41,33 @@ abstract contract BitPacker is Modifiers {
             return (packedPayoutNonces[slotIndex] & (1 << bitIndex)) != 0;
         }
     }
+
+
+    
+
+    /**
+     * @dev Pack a boolean into a uint256 at a specific slot
+     * @param fullInt The uint256 to pack the boolean into
+     * @param slot The slot to pack the boolean into
+     * @param flag The boolean to pack
+     * @return The packed uint256
+    */
+    function packBooltoUint(uint256 fullInt, uint256 slot, bool flag) internal pure returns (uint256) {
+        if (flag) {
+            fullInt |= 1 << slot;
+        } else {
+            fullInt &= ~(1 << slot);
+        }
+        return fullInt;
+    }
+
+    /**
+     * @dev Unpack a boolean from a uint256 at a specific slot
+     * @param fullInt The uint256 to unpack the boolean from
+     * @param slot The slot to unpack the boolean from
+     * @return The unpacked boolean
+    */
+    function unpackBoolfromUint(uint256 fullInt, uint256 slot) internal pure returns (bool) {
+        return (fullInt & (1 << slot)) != 0;
+    }
 }

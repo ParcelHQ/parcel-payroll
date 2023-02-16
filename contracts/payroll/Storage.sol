@@ -69,8 +69,7 @@ abstract contract Storage {
     // Mapping of tokens to Fetch in current cycle
     mapping (address => uint96) public tokensToFetch;
 
-    // List of token Addresses to fetch
-    address[] paymentTokens;
+    
 
     // Struct for Payout
     struct Payout {

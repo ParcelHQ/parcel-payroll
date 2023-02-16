@@ -115,8 +115,15 @@ contract PayrollManager is SignatureEIP712, GnosisHelper, TransactionEncoder {
         address safeAddress
     ) external onlyOnboarded(safeAddress) {
 
-        // Memory for Approved payouts
-        bool[] memory approvedPayouts = new bool[](payouts.length);
+        require(payouts.length < 256, "Max 256 payouts per transaction");
+
+        // List of token Addresses to fetch
+        address[] memory uniqueTokenAddresses = new address[](payouts.length);
+        uint8 uniqueTokenAddressesLength;
+
+        // Approved payout indexes packed into a uint256
+        uint256 approvedPayoutIndexes;
+        // bool[] memory approvedPayouts = new bool[](payouts.length);
 
         // Loop through all payouts
         for (uint8 i = 0; i < payouts.length; i++) {
@@ -130,7 +137,7 @@ contract PayrollManager is SignatureEIP712, GnosisHelper, TransactionEncoder {
             if (packedPayoutNonces.length != 0 && getPayoutNonce(payouts[i].payoutNonce)) {
                 revert("CS017");
             }
-
+            
             // Initialize the number of approvals for the current payout
             uint8 approvals = 0;
             
@@ -169,9 +176,10 @@ contract PayrollManager is SignatureEIP712, GnosisHelper, TransactionEncoder {
                     // If it is, increment approval count
                     approvals += 1;
                     // If the token amount to be fetched is 0, it gets added in next step.
-                    // So add the token to the paymentTokens array
+                    // So add the token to the uniqueTokenAddresses array
                     if (tokensToFetch[payouts[i].tokenAddress] == 0) {
-                        paymentTokens.push(payouts[i].tokenAddress);
+                        uniqueTokenAddresses[uniqueTokenAddressesLength] = payouts[i].tokenAddress;
+                        uniqueTokenAddressesLength += 1;
                     }
 
                     // Increment amount to be fetched from the allowance module
@@ -184,43 +192,60 @@ contract PayrollManager is SignatureEIP712, GnosisHelper, TransactionEncoder {
 
             // If approval count is greater than or equal to approvalsRequired, mark payout as approved
             if (approvals >= orgs[safeAddress].approvalsRequired) {
-                approvedPayouts[i] = true;
+                // approvedPayouts[i] = true;
+                approvedPayoutIndexes = packBooltoUint(approvedPayoutIndexes, i+1, true);
             }
         }
 
         // Fetch all tokens from the Safe
-        for (uint8 index = 0; index < paymentTokens.length; index++) {
-            execTransactionFromGnosis(
-                safeAddress,
-                paymentTokens[index],
-                tokensToFetch[paymentTokens[index]],
-                bytes("")
-            );
-            // Delete the token from the tokensToFetch array
-            delete tokensToFetch[paymentTokens[index]];
-        }
+        fetchTokensFromOrg(uniqueTokenAddresses, safeAddress);
         
-
-
         // For each payout, if it is approved, execute it
         for (uint8 i = 0; i < payouts.length; i++) {
-            if (approvedPayouts[i]) {
+            if (unpackBoolfromUint(approvedPayoutIndexes, i+1)) {
                 // Create Ether or IRC20 Transfer
+                packPayoutNonce(true, payouts[i].payoutNonce);
                 IERC20 erc20 = IERC20(payouts[i].tokenAddress);
                 erc20.transfer(payouts[i].recipient, payouts[i].amount);
-                packPayoutNonce(true, payouts[i].payoutNonce);
             }
         }
 
-        // Clean up the paymentTokens array
-        delete paymentTokens;
-
         // Clean up the approvedRoots linked list
+        cleanUpApprovedRoots();
+    }
+
+    /**
+     * @dev Fetches tokens from the Safe
+     */
+    function fetchTokensFromOrg(address[] memory uniqueTokenAddresses, address safeAddress) internal {
+        // For each token address, fetch the tokens from the allowance module
+        for (uint8 index = 0; index < uniqueTokenAddresses.length; index++) {
+            // If the token address is 0x00, skip
+            if(uniqueTokenAddresses[index] == address(0)) {
+                continue;
+            }
+            // Fetch the tokens from the allowance module
+            execTransactionFromGnosis(
+                safeAddress,
+                uniqueTokenAddresses[index],
+                tokensToFetch[uniqueTokenAddresses[index]],
+                bytes("")
+            );
+            // Delete the token from the tokensToFetch array
+            delete tokensToFetch[uniqueTokenAddresses[index]];
+        }
+    }
+
+    /**
+     * @dev Clean up the approvedRoots linked list
+     */
+    function cleanUpApprovedRoots() internal {
         while (approvedRoots[SENTINEL_BYTES] != NULL_BYTES) {
             bytes32 root = approvedRoots[SENTINEL_BYTES];
             approvedRoots[SENTINEL_BYTES] = approvedRoots[root];
             delete approvedRoots[root];
         }
         
+        approvedRoots[SENTINEL_BYTES] = SENTINEL_BYTES; 
     }
 }
