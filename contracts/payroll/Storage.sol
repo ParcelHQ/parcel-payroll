@@ -57,6 +57,9 @@ abstract contract Storage {
    */
   uint256[] packedPayoutNonces;
 
+  // Null Pointer for linked list
+  bytes32 public constant NULL_BYTES = bytes32(0);
+
   // Sentinel for linked list
   bytes32 public constant SENTINEL_BYTES = keccak256("SENTINEL");
 
@@ -72,7 +75,8 @@ abstract contract Storage {
     address tokenAddress;
     uint96 amount;
     uint64 payoutNonce;
-    uint8[] rootIndexes;
+    bytes32[] merkleRoots;
+    bytes[] rootSignatures;
     bytes32[][] merkleProofs;
   }
 }
