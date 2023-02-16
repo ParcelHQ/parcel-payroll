@@ -145,8 +145,8 @@ async function main() {
   const leaves_2 = ([] = [
     encodedHashes[0],
     encodedHashes[1],
-    encodedHashes[2],
     encodedHashes[3],
+    encodedHashes[2],
     encodedHashes[4],
     encodedHashes[5],
     encodedHashes[6],
@@ -198,9 +198,9 @@ async function main() {
       tokenAddress: payout.tokenAddress,
       amount: payout.amount,
       payoutNonce: payout.payoutNonce,
-      merkleRoots: [root_1, root_2],
+      rootIndexes: [0, 1],
+      signatureIndexes: [0, 1],
       merkleProofs: [proof_1, proof_2],
-      rootSignatures: [operator1Sign, operator2Sign],
     };
   });
 
@@ -209,6 +209,8 @@ async function main() {
   // // Executing Payouts
   const tx = await Organizer.connect(operator1).executePayouts(
     payoutArgs,
+    [root_1, root_2],
+    [operator1Sign, operator2Sign],
     MULTISIG_ADDRESS,
     {
       gasLimit: 9000000,
