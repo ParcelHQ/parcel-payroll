@@ -41,7 +41,7 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
      */
     function onboard(
         address[] calldata _approvers,
-        uint256 approvalsRequired
+        uint128 approvalsRequired
     ) external onlyMultisig(msg.sender) {
         address safeAddress = msg.sender;
 

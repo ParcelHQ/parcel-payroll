@@ -2,9 +2,9 @@
 
 ### General init related
 
-- `CS000`: `Operators Are Mandatory`
-- `CS001`: `Operator Address Can not be null`
-- `CS002`: `Duplicate Address for operator`
+- `CS000`: `Approvers Are Mandatory`
+- `CS001`: `Approver Address Can not be null`
+- `CS002`: `Duplicate Address for Approver`
 
 ### Utils Errors
 
@@ -32,6 +32,8 @@
 ### Approval Related
 - `CS014`: `Payout is not approved by a valid operator`
 - `CS015`: `Invalid Threshold Value: 0`
+- `CS016`: `Threshold cannot exceed approver count`
+- `CS017`: `Invalid PrevApprover pair provided`
 
 
 
