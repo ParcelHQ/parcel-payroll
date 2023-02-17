@@ -13,6 +13,20 @@ module.exports = {
     },
   },
 
+  // networks: {
+  //   mainnet: {
+  //     forking: {
+  //       url: "https://eth-mainnet.g.alchemy.com/v2/62V7EBvEFRA6DT_0RnOdq1c3ZH997ldQ",
+  //     },
+  //   },
+
+  //   goerli: {
+  //     forking: {
+  //       url: "https://eth-goerli.g.alchemy.com/v2/MT0pDHBrQ7J8fDTEPdPXcWD-JyAQbH0w",
+  //     },
+  //   },
+  // },
+
   solidity: {
     version: "0.8.9",
     settings: {
