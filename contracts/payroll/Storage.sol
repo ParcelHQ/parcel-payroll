@@ -14,12 +14,9 @@ abstract contract Storage {
      * @param autoClaim Mapping of autoClaim
      */
     struct ORG {
-        uint256 approverCount;
+        uint128 approverCount;
+        uint128 approvalsRequired;
         mapping(address => address) approvers;
-        // mapping(address => ApprovalLevel[]) approvalMatrices;
-        uint256 approvalsRequired;
-        mapping(address => mapping(address => uint96)) claimables;
-        mapping(address => bool) autoClaim;
     }
 
     // Address of the Allowance Module
@@ -41,12 +38,6 @@ abstract contract Storage {
      * Mapping of org's safe address to ORG struct
      */
     mapping(address => ORG) orgs;
-
-    /**
-     * @dev Storage for root nodes of approved payout merkle trees
-     * Mapping of root node to boolean, true if approved, false if not
-     */
-    mapping(bytes32 => bool) approvedNodes;
 
     /**
      * @dev Storage for packed payout nonces

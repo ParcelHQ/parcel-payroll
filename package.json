@@ -6,6 +6,7 @@
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@nomicfoundation/hardhat-toolbox": "^2.0.1",
     "@nomiclabs/hardhat-ethers": "^2.2.2",
+    "@tenderly/hardhat-tenderly": "^1.5.3",
     "@typechain/ethers-v5": "^10.2.0",
     "@typechain/hardhat": "^6.1.5",
     "@types/mocha": "^10.0.1",
@@ -20,7 +21,8 @@
   "dependencies": {
     "@nomiclabs/hardhat-etherscan": "^3.1.6",
     "@openzeppelin/contracts": "^4.8.1",
-    "hardhat-gas-reporter": "^1.0.9"
+    "hardhat-gas-reporter": "^1.0.9",
+    "merkletreejs": "^0.3.9"
   },
   "scripts": {
     "compile": "hardhat compile",

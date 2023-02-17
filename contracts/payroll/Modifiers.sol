@@ -26,25 +26,4 @@ abstract contract Modifiers is Validators {
         require(msg.sender == _safeAddress, "CS010");
         _;
     }
-
-    /**
-     * @dev Check if the sender is an approver
-     * @param _safeAddress Address of the Org
-     */
-    modifier onlyApprover(address _safeAddress) {
-        require(isApprover(_safeAddress, msg.sender), "CS011");
-        _;
-    }
-
-    /**
-     * @dev Check if the sender is an approver or the multisig
-     * @param _safeAddress Address of the Org
-     */
-    modifier onlyApproverOrMultisig(address _safeAddress) {
-        require(
-            isApprover(_safeAddress, msg.sender) || msg.sender == _safeAddress,
-            "CS012"
-        );
-        _;
-    }
 }

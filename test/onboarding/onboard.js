@@ -36,6 +36,15 @@ describe("Organizer Contract", () => {
       expect(await organizer.isOrgOnboarded(multisig.address)).to.equal(true);
     });
 
+    it("Should Not Offboard A Multisig Organisation If Transaction Not Send By Multisig", async function () {
+      const [multisig, operator_1, operator_2, operator_3] = signers;
+
+      // verify is dao is offboarded
+      expect(
+        organizer.connect(operator_1).offboard(multisig.address)
+      ).to.be.rejectedWith("CS010");
+    });
+
     it("Should Offboard A Multisig Organisation", async function () {
       const [multisig, operator_1, operator_2, operator_3] = signers;
 

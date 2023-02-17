@@ -21,30 +21,27 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
         address[] approvers2
     );
 
-    
     //  Org Offboarded
     event OrgOffboarded(address indexed orgAddress);
 
-    
     /**
-        * @dev Constructor
-        * @param _allowanceAddress - Address of the Allowance Module on current Network
-        * @param _masterOperator - Address of the Master Operator
+     * @dev Constructor
+     * @param _allowanceAddress - Address of the Allowance Module on current Network
+     * @param _masterOperator - Address of the Master Operator
      */
     constructor(address _allowanceAddress, address _masterOperator) {
         ALLOWANCE_MODULE = _allowanceAddress;
         MASTER_OPERATOR = _masterOperator;
     }
 
-    
     /**
-        * @dev Onboard an Org with approvers 
-        * @param _approvers - Array of approver addresses
-        * @param approvalsRequired - Number of approvals required for a payout to be executed
+     * @dev Onboard an Org with approvers
+     * @param _approvers - Array of approver addresses
+     * @param approvalsRequired - Number of approvals required for a payout to be executed
      */
     function onboard(
         address[] calldata _approvers,
-        uint256 approvalsRequired
+        uint128 approvalsRequired
     ) external onlyMultisig(msg.sender) {
         address safeAddress = msg.sender;
 
@@ -70,6 +67,7 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
                     currentapprover != approver,
                 "CS001"
             );
+
             // No duplicate approvers allowed.
             require(
                 orgs[safeAddress].approvers[approver] == address(0),
@@ -86,16 +84,12 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
     }
 
     /**
-        * @dev Offboard an Org, remove all approvers and delete the Org
-        * @param _safeAddress - Address of the Org
-     */    
+     * @dev Offboard an Org, remove all approvers and delete the Org
+     * @param _safeAddress - Address of the Org
+     */
     function offboard(
         address _safeAddress
-    )
-        external
-        onlyOnboarded(_safeAddress)
-        onlyMultisig(_safeAddress)
-    {
+    ) external onlyOnboarded(_safeAddress) onlyMultisig(_safeAddress) {
         // Remove all approvers in Orgs
         address currentapprover = orgs[_safeAddress].approvers[
             SENTINEL_ADDRESS
