@@ -1,4 +1,4 @@
-# Parcel Payroll - SC Documentation
+# Parcel Payroll
 
 ### **Summary**
 
