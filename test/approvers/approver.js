@@ -117,7 +117,7 @@ describe("ApprovalManager Contract", () => {
       expect(
         organizer.addApproverWithThreshold(
           multisig.address,
-          operator_4.address,
+          operator_5.address,
           0
         )
       ).to.revertedWith("CS002");

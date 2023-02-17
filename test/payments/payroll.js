@@ -26,10 +26,6 @@ describe("PayrollManager Contract", () => {
         ALLOWANCE_MODULE
       );
       await organizer.connect(multisig).deployed();
-      domainData = {
-        chainId: 31337,
-        verifyingContract: organizer.address,
-      };
     });
 
     it("encodeTransactionData, Should Generate the correct hash", async function () {
