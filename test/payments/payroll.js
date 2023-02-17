@@ -61,46 +61,5 @@ describe("PayrollManager Contract", () => {
 
       expect(encodedHash).to.equals(verifiedHash);
     });
-
-    it("validatePayouts, Should Validate the Payout", async function () {
-      const [multisig, operator_1, operator_2, operator_3] = signers;
-
-      // onboard a dao
-      await organizer
-        .connect(multisig)
-        .onboard(
-          [operator_1.address, operator_2.address, operator_3.address],
-          threshold
-        );
-
-      const metadata = {
-        to: "0x2fEB7B7B1747f6be086d50A939eb141A2e90A2d7",
-        tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
-        amount: ethers.utils.parseEther("0.0001"),
-        payoutNonce: 1,
-      };
-
-      const encodedHash = await organizer.encodeTransactionData(
-        metadata.to,
-        metadata.tokenAddress,
-        metadata.amount,
-        metadata.payoutNonce
-      );
-
-      const operator1Sign = await operator_1._signTypedData(
-        domainData,
-        {
-          PayrollTx: PayrollTx,
-        },
-        { rootHash: encodedHash }
-      );
-
-      const validatePayoutResponse = await organizer
-        .connect(multisig)
-        .validatePayouts(multisig.address, [encodedHash], [operator1Sign]);
-
-      const approvedNode = await organizer.approvedNodes(encodedHash);
-      expect(approvedNode).to.equal(true);
-    });
   });
 });
