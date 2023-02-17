@@ -1,7 +1,5 @@
 # Parcel Payroll - SC Documentation
 
-[Audit Scope (Parcel Payroll v1)](https://www.notion.so/Audit-Scope-Parcel-Payroll-v1-3071f567fd234e59a9563cb4d1d2bcbf)
-
 ### **Summary**
 
 There are no tools designed for crypto payroll. We want to change that by building the infrastructure from ground up with our smart contracts.
