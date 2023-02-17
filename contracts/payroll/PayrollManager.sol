@@ -16,7 +16,7 @@ contract PayrollManager is
     Modifiers,
     ReentrancyGuard
 {
-    // Utility Functions
+    // Payroll Functions
 
     /**
      * @dev Set usage status of a payout nonce
@@ -86,8 +86,8 @@ contract PayrollManager is
      * @param proof Merkle proof of the payroll transaction hashes
      * @param roots Merkle roots of the payroll transaction hashes
      * @param signatures Signatures of the payroll transaction hashes
-     * @param paymentTokens Addresses of the tokens to send
-     * @param payoutAmounts Amounts of tokens to send
+     * @param paymentTokens Addresses of all the tokens to send in the payroll
+     * @param payoutAmounts Total Amounts of respective tokens to send in the payroll
      */
     function executePayroll(
         address safeAddress,
@@ -101,29 +101,38 @@ contract PayrollManager is
         address[] memory paymentTokens,
         uint96[] memory payoutAmounts
     ) external nonReentrant {
+        // Validate the Input Data
         require(to.length == tokenAddress.length, "CS004");
         require(to.length == amount.length, "CS004");
         require(to.length == payoutNonce.length, "CS004");
+        require(roots.length == signatures.length, "CS004");
 
+        // Boolean array to track validated roots
         bool[] memory validatedRoots = new bool[](roots.length);
         {
+            // Validate the roots via approver signatures
             address currentApprover;
             for (uint256 i = 0; i < roots.length; i++) {
+                // Recover signer from the signature
                 address signer = validatePayrollTxHashes(
                     roots[i],
                     signatures[i]
                 );
+                // Check if the signer is an approver & is different from the current approver
                 require(
                     _isApprover(safeAddress, signer) &&
                         signer > currentApprover,
                     "CS014"
                 );
+                // Set the current approver to the signer
                 currentApprover = signer;
+                // Set the root as validated
                 validatedRoots[i] = true;
             }
         }
 
         {
+            // Fetch the required tokens from the safe via Allowance module
             for (uint96 index = 0; index < paymentTokens.length; index++) {
                 execTransactionFromGnosis(
                     safeAddress,
@@ -134,7 +143,9 @@ contract PayrollManager is
             }
         }
 
+        // Loop through the payouts
         for (uint256 i = 0; i < to.length; i++) {
+            // Generate the leaf from the payout data
             bytes32 leaf = encodeTransactionData(
                 to[i],
                 tokenAddress[i],
@@ -142,26 +153,34 @@ contract PayrollManager is
                 payoutNonce[i]
             );
 
+            // Initialize the approvals counter
             uint96 approvals;
 
+            // Loop through the roots
             for (uint96 j = 0; j < roots.length; j++) {
+                // Verify the root has been validated
+                // Verify the proof against the current root and increment the approvals counter
                 if (
-                    MerkleProof.verify(proof[i][j], roots[j], leaf) &&
-                    validatedRoots[j] == true
+                    validatedRoots[j] == true &&
+                    MerkleProof.verify(proof[i][j], roots[j], leaf)
                 ) {
                     approvals += 1;
                 }
             }
 
+            // Check if the approvals are greater than or equal to the required approvals
             if (
                 approvals >= orgs[safeAddress].approvalsRequired &&
                 (packedPayoutNonces.length == 0 ||
                     !getPayoutNonce(payoutNonce[i]))
             ) {
+                // Transfer the funds to the recipient (to) addresses
                 if (tokenAddress[i] == address(0)) {
+                    // Transfer ether
                     payable(to[i]).transfer(amount[i]);
                     packPayoutNonce(true, payoutNonce[i]);
                 } else {
+                    // Transfer ERC20 tokens
                     IERC20 erc20 = IERC20(tokenAddress[i]);
                     erc20.transfer(to[i], amount[i]);
                     packPayoutNonce(true, payoutNonce[i]);
@@ -169,10 +188,12 @@ contract PayrollManager is
             }
         }
 
+        // Check if the contract has any tokens left
         for (uint256 i = 0; i < paymentTokens.length; i++) {
             IERC20 erc20 = IERC20(paymentTokens[i]);
             if (erc20.balanceOf(address(this)) > 0) {
-                revert();
+                // Revert if the contract has any tokens left
+                revert("CS018");
             }
         }
     }

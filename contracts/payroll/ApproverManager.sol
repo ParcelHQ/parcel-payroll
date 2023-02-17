@@ -80,8 +80,8 @@ abstract contract ApproverManager is Modifiers {
             changeThreshold(safeAddress, threshold);
     }
 
-    /// @dev Allows to swap/replace an approver from the Safe with another address.
-    ///      This can only be done via a Safe transaction.
+    /// @dev Allows to swap/replace an approver with another address.
+    ///      This can only be done via a Multisig transaction.
     /// @notice Replaces the approver `oldApprover` in the Safe with `newApprover`.
     /// @param prevApprover Approver that pointed to the approver to be replaced in the linked list
     /// @param oldApprover Approver address to be replaced.
@@ -124,9 +124,9 @@ abstract contract ApproverManager is Modifiers {
         emit ApproverAdded(safeAddress, newApprover);
     }
 
-    /// @dev Allows to update the number of required confirmations by Safe approver.
-    ///      This can only be done via a Safe transaction.
-    /// @notice Changes the threshold of the Safe to `_threshold`.
+    /// @dev Allows to update the number of required confirmations by Safe approvers.
+    ///      This can only be done via a Multisig transaction.
+    /// @notice Changes the approvals required to `_threshold`.
     /// @param threshold New threshold.
     function changeThreshold(
         address safeAddress,
