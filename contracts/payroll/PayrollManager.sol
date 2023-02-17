@@ -95,9 +95,9 @@ contract PayrollManager is SignatureEIP712, Validators, Modifiers {
         address[] memory paymentTokens,
         uint96[] memory payoutAmounts
     ) external {
-        require(to.length == tokenAddress.length, "Invalid Input");
-        require(to.length == amount.length, "Invalid Input");
-        require(to.length == payoutNonce.length, "Invalid Input");
+        require(to.length == tokenAddress.length, "CS004");
+        require(to.length == amount.length, "CS004");
+        require(to.length == payoutNonce.length, "CS004");
 
         bool[] memory validatedRoots = new bool[](roots.length);
         {
@@ -110,7 +110,7 @@ contract PayrollManager is SignatureEIP712, Validators, Modifiers {
                 require(
                     _isApprover(safeAddress, signer) &&
                         signer > currentApprover,
-                    "Not an Operator"
+                    "CS014"
                 );
                 currentApprover = signer;
                 validatedRoots[i] = true;
@@ -152,17 +152,21 @@ contract PayrollManager is SignatureEIP712, Validators, Modifiers {
                 (packedPayoutNonces.length == 0 ||
                     !getPayoutNonce(payoutNonce[i]))
             ) {
-                // Create Ether or IRC20 Transfer
-                IERC20 erc20 = IERC20(tokenAddress[i]);
-                erc20.transfer(to[i], amount[i]);
-                packPayoutNonce(true, payoutNonce[i]);
+                if (tokenAddress[i] == address(0)) {
+                    payable(to[i]).transfer(amount[i]);
+                    packPayoutNonce(true, payoutNonce[i]);
+                } else {
+                    IERC20 erc20 = IERC20(tokenAddress[i]);
+                    erc20.transfer(to[i], amount[i]);
+                    packPayoutNonce(true, payoutNonce[i]);
+                }
             }
         }
 
         for (uint256 i = 0; i < paymentTokens.length; i++) {
             IERC20 erc20 = IERC20(paymentTokens[i]);
             if (erc20.balanceOf(address(this)) > 0) {
-                revert("");
+                revert();
             }
         }
     }
