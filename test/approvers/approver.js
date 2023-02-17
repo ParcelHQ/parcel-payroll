@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ALLOWANCE_MODULE } = require("../../utils/constant");
+require("@nomiclabs/hardhat-ethers");
 
 describe("ApprovalManager Contract", () => {
   describe("Approver Manager", function () {
