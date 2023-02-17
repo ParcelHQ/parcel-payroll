@@ -70,7 +70,20 @@ contract PayrollManager is SignatureEIP712, Validators, Modifiers {
         return encodedHash;
     }
 
-    function bulkExecution(
+    /**
+     * @dev Validate the payroll transaction hashes and execute the payrill
+     * @param safeAddress Address of the safe
+     * @param to Addresses to send the funds to
+     * @param tokenAddress Addresses of the tokens to send
+     * @param amount Amounts of tokens to send
+     * @param payoutNonce Payout nonces to use
+     * @param proof Merkle proof of the payroll transaction hashes
+     * @param roots Merkle roots of the payroll transaction hashes
+     * @param signatures Signatures of the payroll transaction hashes
+     * @param paymentTokens Addresses of the tokens to send
+     * @param payoutAmounts Amounts of tokens to send
+     */
+    function executePayroll(
         address safeAddress,
         address[] memory to,
         address[] memory tokenAddress,

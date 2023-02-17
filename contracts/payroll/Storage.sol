@@ -43,12 +43,6 @@ abstract contract Storage {
     mapping(address => ORG) orgs;
 
     /**
-     * @dev Storage for root nodes of approved payout merkle trees
-     * Mapping of root node to boolean, true if approved, false if not
-     */
-    mapping(bytes32 => bool) approvedNodes;
-
-    /**
      * @dev Storage for packed payout nonces
      * Array of uint256, each uint256 represents 256 payout nonces
      * Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
