@@ -68,6 +68,35 @@ contract PayrollManager is SignatureEIP712, Modifiers, ReentrancyGuard {
     }
 
     /**
+     * @dev Checks for Signature and Verify signed merkle root signature
+     * @param safeAddress Address to send the funds to
+     * @param roots Address of the token to send
+     * @param signatures Amount of tokens to send
+     */
+    function checkNSignatures(
+        address safeAddress,
+        bytes32[] memory roots,
+        bytes[] memory signatures
+    ) internal view {
+        // Validate the roots via approver signatures
+        address currentApprover;
+        for (uint256 i = 0; i < roots.length; i++) {
+            // Recover signer from the signature
+            address signer = validatePayrollTxHashes(roots[i], signatures[i]);
+            // Check if the signer is an approver & is different from the current approver
+            require(
+                signer != SENTINEL_ADDRESS &&
+                    orgs[safeAddress].approvers[signer] != address(0) &&
+                    signer > currentApprover,
+                "CS014"
+            );
+            // Set the current approver to the signer
+            currentApprover = signer;
+            // Set the root as validated
+        }
+    }
+
+    /**
      * @dev Validate the payroll transaction hashes and execute the payrill
      * @param safeAddress Address of the safe
      * @param to Addresses to send the funds to
@@ -98,30 +127,7 @@ contract PayrollManager is SignatureEIP712, Modifiers, ReentrancyGuard {
         require(to.length == payoutNonce.length, "CS004");
         require(roots.length == signatures.length, "CS004");
 
-        // Boolean array to track validated roots
-        bool[] memory validatedRoots = new bool[](roots.length);
-        {
-            // Validate the roots via approver signatures
-            address currentApprover;
-            for (uint256 i = 0; i < roots.length; i++) {
-                // Recover signer from the signature
-                address signer = validatePayrollTxHashes(
-                    roots[i],
-                    signatures[i]
-                );
-                // Check if the signer is an approver & is different from the current approver
-                require(
-                    signer != SENTINEL_ADDRESS &&
-                        orgs[safeAddress].approvers[signer] != address(0) &&
-                        signer > currentApprover,
-                    "CS014"
-                );
-                // Set the current approver to the signer
-                currentApprover = signer;
-                // Set the root as validated
-                validatedRoots[i] = true;
-            }
-        }
+        checkNSignatures(safeAddress, roots, signatures);
 
         {
             // Fetch the required tokens from the safe via Allowance module
@@ -151,10 +157,7 @@ contract PayrollManager is SignatureEIP712, Modifiers, ReentrancyGuard {
             for (uint96 j = 0; j < roots.length; j++) {
                 // Verify the root has been validated
                 // Verify the proof against the current root and increment the approvals counter
-                if (
-                    validatedRoots[j] == true &&
-                    MerkleProof.verify(proof[i][j], roots[j], leaf)
-                ) {
+                if (MerkleProof.verify(proof[i][j], roots[j], leaf)) {
                     approvals += 1;
                 }
             }

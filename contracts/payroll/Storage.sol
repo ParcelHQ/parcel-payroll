@@ -10,8 +10,6 @@ abstract contract Storage {
      * @param approverCount Number of approvers in the org
      * @param approvers Linked list of approvers
      * @param approvalsRequired Number of approvals required for a single payout
-     * @param claimables Mapping of claimables
-     * @param autoClaim Mapping of autoClaim
      */
     struct ORG {
         uint128 approverCount;
@@ -29,7 +27,7 @@ abstract contract Storage {
      * @dev Storage for Organisations
      * Mapping of org's safe address to ORG struct
      */
-    mapping(address => ORG) orgs;
+    mapping(address => ORG) public orgs;
 
     /**
      * @dev Storage for packed payout nonces
