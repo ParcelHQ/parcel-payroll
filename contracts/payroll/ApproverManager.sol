@@ -25,9 +25,13 @@ abstract contract ApproverManager is Modifiers {
         address safeAddress,
         address approver,
         uint128 threshold
-    ) public onlyOnboarded(safeAddress) {
+    ) public {
         // check if transaction is being sent by multisig
         require(msg.sender == safeAddress, "CS010");
+
+        // check if the org is onboarded
+        _onlyOnboarded(msg.sender);
+
         // Approver address cannot be null, the sentinel or the Safe itself.
         require(
             approver != address(0) &&
@@ -61,9 +65,13 @@ abstract contract ApproverManager is Modifiers {
         address prevApprover,
         address approver,
         uint128 threshold
-    ) public onlyOnboarded(safeAddress) {
+    ) public {
         // check if transaction is being sent by multisig
         require(msg.sender == safeAddress, "CS010");
+
+        // check if the org is onboarded
+        _onlyOnboarded(msg.sender);
+
         // Only allow to remove an approver, if threshold can still be reached.
         require(orgs[safeAddress].approverCount - 1 >= threshold, "CS016");
         // Validate approver address and check that it corresponds to approver index.
@@ -95,9 +103,12 @@ abstract contract ApproverManager is Modifiers {
         address prevApprover,
         address oldApprover,
         address newApprover
-    ) public onlyOnboarded(safeAddress) {
+    ) public {
         // check if transaction is being sent by multisig
         require(msg.sender == safeAddress, "CS010");
+
+        // check if the org is onboarded
+        _onlyOnboarded(msg.sender);
 
         // Approver address cannot be null, the sentinel or the Safe itself.
         require(
@@ -135,12 +146,12 @@ abstract contract ApproverManager is Modifiers {
     ///      This can only be done via a Multisig transaction.
     /// @notice Changes the approvals required to `_threshold`.
     /// @param threshold New threshold.
-    function changeThreshold(
-        address safeAddress,
-        uint128 threshold
-    ) public onlyOnboarded(safeAddress) {
+    function changeThreshold(address safeAddress, uint128 threshold) public {
         // check if transaction is being sent by multisig
         require(msg.sender == safeAddress, "CS010");
+
+        // check if the org is onboarded
+        _onlyOnboarded(msg.sender);
 
         // Validate that threshold is smaller than number of approvers.
         require(threshold <= orgs[safeAddress].approverCount, "CS016");
@@ -157,7 +168,10 @@ abstract contract ApproverManager is Modifiers {
      */
     function getApprovers(
         address _safeAddress
-    ) public view onlyOnboarded(_safeAddress) returns (address[] memory) {
+    ) public view returns (address[] memory) {
+        // check if the org is onboarded
+        _onlyOnboarded(msg.sender);
+
         address[] memory array = new address[](
             orgs[_safeAddress].approverCount
         );
@@ -180,7 +194,9 @@ abstract contract ApproverManager is Modifiers {
      */
     function getApproverCount(
         address _safeAddress
-    ) external view onlyOnboarded(_safeAddress) returns (uint256) {
+    ) external view returns (uint256) {
+        // check if the org is onboarded
+        _onlyOnboarded(msg.sender);
         return orgs[_safeAddress].approverCount;
     }
 
@@ -191,7 +207,13 @@ abstract contract ApproverManager is Modifiers {
      */
     function getThreshold(
         address _safeAddress
-    ) external view onlyOnboarded(_safeAddress) returns (uint256) {
+    ) external view returns (uint256) {
+        // check if the org is onboarded
+        _onlyOnboarded(msg.sender);
         return orgs[_safeAddress].approvalsRequired;
+    }
+
+    function _onlyOnboarded(address _safeAddress) internal view {
+        require(orgs[_safeAddress].approverCount != 0, "CS009");
     }
 }

@@ -83,10 +83,11 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
      * @dev Offboard an Org, remove all approvers and delete the Org
      * @param _safeAddress - Address of the Org
      */
-    function offboard(
-        address _safeAddress
-    ) external onlyOnboarded(_safeAddress) {
+    function offboard(address _safeAddress) external {
         require(msg.sender == _safeAddress, "CS010");
+
+        // check if the org is onboarded
+        _onlyOnboarded(msg.sender);
 
         // Remove all approvers in Orgs
         address currentapprover = orgs[_safeAddress].approvers[

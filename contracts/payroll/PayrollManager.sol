@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 // Module Imports
 import "../signature/Signature.sol";
 import "../interfaces/AllowanceModule.sol";
-import "./Modifiers.sol";
 
 contract PayrollManager is SignatureEIP712, Modifiers, ReentrancyGuard {
     // Payroll Functions
@@ -68,7 +67,7 @@ contract PayrollManager is SignatureEIP712, Modifiers, ReentrancyGuard {
     }
 
     /**
-     * @dev Validates given signatures to valid and unique from each approver and checks if approvers belongs to given safeAddress
+     * @dev This function validates the signature and verifies if signatures are unique and the approver belongs to safe
      * @param safeAddress Address to send the funds to
      * @param roots Address of the token to send
      * @param signatures Amount of tokens to send
@@ -96,7 +95,7 @@ contract PayrollManager is SignatureEIP712, Modifiers, ReentrancyGuard {
     }
 
     /**
-     * @dev Validate the payroll transaction hashes and execute the payrill
+     * @dev Validate the payroll transaction hashes and execute the payroll
      * @param safeAddress Address of the safe
      * @param to Addresses to send the funds to
      * @param tokenAddress Addresses of the tokens to send
@@ -130,7 +129,7 @@ contract PayrollManager is SignatureEIP712, Modifiers, ReentrancyGuard {
 
         {
             // Fetch the required tokens from the safe via Allowance module
-            for (uint96 index = 0; index < paymentTokens.length; index++) {
+            for (uint256 index = 0; index < paymentTokens.length; index++) {
                 execTransactionFromGnosis(
                     safeAddress,
                     paymentTokens[index],
@@ -150,14 +149,14 @@ contract PayrollManager is SignatureEIP712, Modifiers, ReentrancyGuard {
             );
 
             // Initialize the approvals counter
-            uint96 approvals;
+            uint256 approvals;
 
             // Loop through the roots
-            for (uint96 j = 0; j < roots.length; j++) {
+            for (uint256 j = 0; j < roots.length; j++) {
                 // Verify the root has been validated
                 // Verify the proof against the current root and increment the approvals counter
                 if (MerkleProof.verify(proof[i][j], roots[j], leaf)) {
-                    approvals += 1;
+                    ++approvals;
                 }
             }
 
@@ -182,8 +181,7 @@ contract PayrollManager is SignatureEIP712, Modifiers, ReentrancyGuard {
 
         // Check if the contract has any tokens left
         for (uint256 i = 0; i < paymentTokens.length; i++) {
-            IERC20 erc20 = IERC20(paymentTokens[i]);
-            if (erc20.balanceOf(address(this)) > 0) {
+            if (IERC20(paymentTokens[i]).balanceOf(address(this)) > 0) {
                 // Revert if the contract has any tokens left
                 revert("CS018");
             }
