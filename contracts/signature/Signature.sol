@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-contract SignatureEIP712 {
+contract Signature {
     using ECDSA for bytes32;
 
     // Domain Typehash

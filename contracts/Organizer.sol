@@ -1,4 +1,3 @@
-//contracts/Organizer.sol
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
@@ -72,7 +71,8 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
             orgs[safeAddress].approvers[currentapprover] = approver;
             currentapprover = approver;
 
-            // TODO: emit Approver added event
+            emit ApproverAdded(safeAddress, approver);
+
             orgs[safeAddress].approverCount++;
         }
         orgs[safeAddress].approvers[currentapprover] = SENTINEL_ADDRESS;

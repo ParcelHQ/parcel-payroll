@@ -9,7 +9,7 @@ import "../signature/Signature.sol";
 import "../interfaces/AllowanceModule.sol";
 import "./Storage.sol";
 
-contract PayrollManager is Storage, SignatureEIP712, ReentrancyGuard {
+contract PayrollManager is Storage, Signature, ReentrancyGuard {
     // Payroll Functions
 
     /**
@@ -73,7 +73,7 @@ contract PayrollManager is Storage, SignatureEIP712, ReentrancyGuard {
      * @param roots Address of the token to send
      * @param signatures Amount of tokens to send
      */
-    function checkNSignatures(
+    function validateSignatures(
         address safeAddress,
         bytes32[] memory roots,
         bytes[] memory signatures
@@ -125,8 +125,9 @@ contract PayrollManager is Storage, SignatureEIP712, ReentrancyGuard {
         require(to.length == amount.length, "CS004");
         require(to.length == payoutNonce.length, "CS004");
         require(roots.length == signatures.length, "CS004");
+        require(paymentTokens.length == payoutAmounts.length, "CS004");
 
-        checkNSignatures(safeAddress, roots, signatures);
+        validateSignatures(safeAddress, roots, signatures);
 
         {
             // Fetch the required tokens from the safe via Allowance module
@@ -201,7 +202,7 @@ contract PayrollManager is Storage, SignatureEIP712, ReentrancyGuard {
         uint96 amount
     ) internal {
         // Execute payout via allowance module
-        AlowanceModule(ALLOWANCE_MODULE).executeAllowanceTransfer(
+        AllowanceModule(ALLOWANCE_MODULE).executeAllowanceTransfer(
             safeAddress,
             tokenAddress,
             payable(address(this)),
