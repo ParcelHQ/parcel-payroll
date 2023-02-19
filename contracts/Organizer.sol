@@ -81,27 +81,20 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
 
     /**
      * @dev Offboard an Org, remove all approvers and delete the Org
-     * @param _safeAddress - Address of the Org
+   
      */
-    function offboard(address _safeAddress) external {
-        require(msg.sender == _safeAddress, "CS010");
-
-        // check if the org is onboarded
+    function offboard() external {
         _onlyOnboarded(msg.sender);
 
         // Remove all approvers in Orgs
-        address currentapprover = orgs[_safeAddress].approvers[
-            SENTINEL_ADDRESS
-        ];
+        address currentapprover = orgs[msg.sender].approvers[SENTINEL_ADDRESS];
         while (currentapprover != SENTINEL_ADDRESS) {
-            address nextapprover = orgs[_safeAddress].approvers[
-                currentapprover
-            ];
-            delete orgs[_safeAddress].approvers[currentapprover];
+            address nextapprover = orgs[msg.sender].approvers[currentapprover];
+            delete orgs[msg.sender].approvers[currentapprover];
             currentapprover = nextapprover;
         }
 
-        delete orgs[_safeAddress];
-        emit OrgOffboarded(_safeAddress);
+        delete orgs[msg.sender];
+        emit OrgOffboarded(msg.sender);
     }
 }
