@@ -7,8 +7,9 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 // Module Imports
 import "../signature/Signature.sol";
 import "../interfaces/AllowanceModule.sol";
+import "./Storage.sol";
 
-contract PayrollManager is SignatureEIP712, Modifiers, ReentrancyGuard {
+contract PayrollManager is Storage, SignatureEIP712, ReentrancyGuard {
     // Payroll Functions
 
     /**

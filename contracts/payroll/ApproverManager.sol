@@ -1,10 +1,11 @@
 //contracts/Organizer.sol
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import "./Modifiers.sol";
+
+import "./Storage.sol";
 
 /// @title Approver Manager for Organizer Contract
-abstract contract ApproverManager is Modifiers {
+abstract contract ApproverManager is Storage {
     // Events
     event ApproverAdded(address indexed safeAddress, address indexed operator);
     event ApproverRemoved(
