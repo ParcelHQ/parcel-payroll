@@ -68,7 +68,7 @@ contract PayrollManager is SignatureEIP712, Modifiers, ReentrancyGuard {
     }
 
     /**
-     * @dev Checks for Signature and Verify signed merkle root signature
+     * @dev Validates given signatures to valid and unique from each approver and checks if approvers belongs to given safeAddress
      * @param safeAddress Address to send the funds to
      * @param roots Address of the token to send
      * @param signatures Amount of tokens to send
