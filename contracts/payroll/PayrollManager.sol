@@ -92,7 +92,6 @@ contract PayrollManager is SignatureEIP712, Modifiers, ReentrancyGuard {
             );
             // Set the current approver to the signer
             currentApprover = signer;
-            // Set the root as validated
         }
     }
 
