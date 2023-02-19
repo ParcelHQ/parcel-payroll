@@ -1,10 +1,10 @@
 //contracts/Organizer.sol
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import "./Validators.sol";
+import "./Storage.sol";
 
 /// @title Modifiers for Organizer Contract
-abstract contract Modifiers is Validators {
+abstract contract Modifiers is Storage {
     //
     //  Modifiers
     //
@@ -14,16 +14,7 @@ abstract contract Modifiers is Validators {
      * @param _safeAddress Address of the Org
      */
     modifier onlyOnboarded(address _safeAddress) {
-        require(isOrgOnboarded(_safeAddress), "CS009");
-        _;
-    }
-
-    /**
-     * @dev Check if the sender is the multisig
-     * @param _safeAddress Address of the Org
-     */
-    modifier onlyMultisig(address _safeAddress) {
-        require(msg.sender == _safeAddress, "CS010");
+        require(orgs[_safeAddress].approverCount > 0, "CS009");
         _;
     }
 }

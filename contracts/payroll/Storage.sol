@@ -22,16 +22,8 @@ abstract contract Storage {
     // Address of the Allowance Module
     address ALLOWANCE_MODULE;
 
-    // Enum for Operation
-    enum Operation {
-        Call,
-        DelegateCall
-    }
-
     //  Sentinels to use with linked lists
     address internal constant SENTINEL_ADDRESS = address(0x1);
-    address internal MASTER_OPERATOR;
-    uint256 internal constant SENTINEL_UINT = 1;
 
     /**
      * @dev Storage for Organisations

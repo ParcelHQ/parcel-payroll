@@ -5,12 +5,6 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 contract SignatureEIP712 {
     using ECDSA for bytes32;
 
-    // Domain Data Struct
-    struct EIP712Domain {
-        uint256 chainId;
-        address verifyingContract;
-    }
-
     // PayrollTx Struct
     // A Owner can Approve the N numbers of Hash
     // hash = encodeTransactionData(recipient, tokenAddress, amount, nonce)
@@ -54,7 +48,6 @@ contract SignatureEIP712 {
             )
         );
 
-        address signer = digest.recover(signature);
-        return signer;
+        return digest.recover(signature);
     }
 }

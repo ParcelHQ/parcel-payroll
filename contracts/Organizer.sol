@@ -3,9 +3,7 @@
 pragma solidity ^0.8.9;
 
 import "./payroll/ApproverManager.sol";
-// import "./organizer/ApprovalMatrix.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-// import "./organizer/PayoutManager.sol";
 import "./payroll/PayrollManager.sol";
 
 /// @title Organizer - A utility smart contract for Orgss to define and manage their Organizational structure.
@@ -27,11 +25,9 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
     /**
      * @dev Constructor
      * @param _allowanceAddress - Address of the Allowance Module on current Network
-     * @param _masterOperator - Address of the Master Operator
      */
-    constructor(address _allowanceAddress, address _masterOperator) {
+    constructor(address _allowanceAddress) {
         ALLOWANCE_MODULE = _allowanceAddress;
-        MASTER_OPERATOR = _masterOperator;
     }
 
     /**
@@ -42,7 +38,7 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
     function onboard(
         address[] calldata _approvers,
         uint128 approvalsRequired
-    ) external onlyMultisig(msg.sender) {
+    ) external {
         address safeAddress = msg.sender;
 
         require(_approvers.length > 0, "CS000");
@@ -89,7 +85,9 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
      */
     function offboard(
         address _safeAddress
-    ) external onlyOnboarded(_safeAddress) onlyMultisig(_safeAddress) {
+    ) external onlyOnboarded(_safeAddress) {
+        require(msg.sender == _safeAddress, "CS010");
+
         // Remove all approvers in Orgs
         address currentapprover = orgs[_safeAddress].approvers[
             SENTINEL_ADDRESS

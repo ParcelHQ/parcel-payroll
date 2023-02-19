@@ -5,17 +5,11 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 // Module Imports
-import "./Validators.sol";
 import "../signature/Signature.sol";
-import "../interfaces/index.sol";
+import "../interfaces/AllowanceModule.sol";
 import "./Modifiers.sol";
 
-contract PayrollManager is
-    SignatureEIP712,
-    Validators,
-    Modifiers,
-    ReentrancyGuard
-{
+contract PayrollManager is SignatureEIP712, Modifiers, ReentrancyGuard {
     // Payroll Functions
 
     /**
@@ -70,10 +64,7 @@ contract PayrollManager is
         uint256 amount,
         uint64 payoutNonce
     ) public pure returns (bytes32) {
-        bytes32 encodedHash = keccak256(
-            abi.encode(to, tokenAddress, amount, payoutNonce)
-        );
-        return encodedHash;
+        return keccak256(abi.encode(to, tokenAddress, amount, payoutNonce));
     }
 
     /**
@@ -120,7 +111,8 @@ contract PayrollManager is
                 );
                 // Check if the signer is an approver & is different from the current approver
                 require(
-                    _isApprover(safeAddress, signer) &&
+                    signer != SENTINEL_ADDRESS &&
+                        orgs[safeAddress].approvers[signer] != address(0) &&
                         signer > currentApprover,
                     "CS014"
                 );
@@ -137,8 +129,7 @@ contract PayrollManager is
                 execTransactionFromGnosis(
                     safeAddress,
                     paymentTokens[index],
-                    payoutAmounts[index],
-                    bytes("")
+                    payoutAmounts[index]
                 );
             }
         }
@@ -181,8 +172,7 @@ contract PayrollManager is
                     packPayoutNonce(true, payoutNonce[i]);
                 } else {
                     // Transfer ERC20 tokens
-                    IERC20 erc20 = IERC20(tokenAddress[i]);
-                    erc20.transfer(to[i], amount[i]);
+                    IERC20(tokenAddress[i]).transfer(to[i], amount[i]);
                     packPayoutNonce(true, payoutNonce[i]);
                 }
             }
@@ -203,28 +193,22 @@ contract PayrollManager is
      * @param safeAddress Address of the Gnosis Safe
      * @param tokenAddress Address of the token to send
      * @param amount Amount of tokens to send
-     * @param signature Signature of the transaction
      */
     function execTransactionFromGnosis(
         address safeAddress,
         address tokenAddress,
-        uint96 amount,
-        bytes memory signature
+        uint96 amount
     ) internal {
-        AlowanceModule allowance = AlowanceModule(ALLOWANCE_MODULE);
-
-        address payable to = payable(address(this));
-
         // Execute payout via allowance module
-        allowance.executeAllowanceTransfer(
-            GnosisSafe(safeAddress),
+        AlowanceModule(ALLOWANCE_MODULE).executeAllowanceTransfer(
+            safeAddress,
             tokenAddress,
-            to,
+            payable(address(this)),
             amount,
             0x0000000000000000000000000000000000000000,
             0,
             address(this),
-            signature
+            bytes("")
         );
     }
 }
