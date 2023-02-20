@@ -1,4 +1,3 @@
-//contracts/Organizer.sol
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
@@ -8,10 +7,8 @@ abstract contract Storage {
     /**
      * @dev Struct for ORG
      * @param approverCount Number of approvers in the org
-     * @param approvers Linked list of approvers
      * @param approvalsRequired Number of approvals required for a single payout
-     * @param claimables Mapping of claimables
-     * @param autoClaim Mapping of autoClaim
+     * @param approvers Linked list of approvers
      */
     struct ORG {
         uint128 approverCount;
@@ -22,22 +19,14 @@ abstract contract Storage {
     // Address of the Allowance Module
     address ALLOWANCE_MODULE;
 
-    // Enum for Operation
-    enum Operation {
-        Call,
-        DelegateCall
-    }
-
     //  Sentinels to use with linked lists
     address internal constant SENTINEL_ADDRESS = address(0x1);
-    address internal MASTER_OPERATOR;
-    uint256 internal constant SENTINEL_UINT = 1;
 
     /**
      * @dev Storage for Organisations
      * Mapping of org's safe address to ORG struct
      */
-    mapping(address => ORG) orgs;
+    mapping(address => ORG) public orgs;
 
     /**
      * @dev Storage for packed payout nonces

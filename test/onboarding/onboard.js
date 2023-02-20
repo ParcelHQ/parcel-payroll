@@ -14,10 +14,7 @@ describe("Organizer Contract", () => {
         it("deploy", async function () {
             const [multisig, __, ___, ____, masterOperator] = signers;
             const Organizer = await hre.ethers.getContractFactory("Organizer");
-            organizer = await Organizer.deploy(
-                masterOperator.address,
-                ALLOWANCE_MODULE
-            );
+            organizer = await Organizer.deploy(ALLOWANCE_MODULE);
             await organizer.connect(multisig).deployed();
         });
 
@@ -36,31 +33,31 @@ describe("Organizer Contract", () => {
                     threshold
                 );
 
+            const dao = await organizer.orgs(multisig.address);
+
             // verify is dao is onboarded
-            expect(await organizer.isOrgOnboarded(multisig.address)).to.equal(
-                true
-            );
+            expect(dao.approverCount).to.greaterThan(0);
         });
 
         it("Should Not Offboard A Multisig Organisation If Transaction Not Send By Multisig", async function () {
             const [multisig, operator_1, operator_2, operator_3] = signers;
 
             // verify is dao is offboarded
-            expect(
-                organizer.connect(operator_1).offboard(multisig.address)
-            ).to.be.rejectedWith("CS010");
+            expect(organizer.connect(operator_1).offboard()).to.rejectedWith(
+                "CS010"
+            );
         });
 
         it("Should Offboard A Multisig Organisation", async function () {
             const [multisig, operator_1, operator_2, operator_3] = signers;
 
             // onboard a dao
-            await organizer.connect(multisig).offboard(multisig.address);
+            await organizer.connect(multisig).offboard();
 
-            // verify is dao is onboarded
-            expect(await organizer.isOrgOnboarded(multisig.address)).to.equal(
-                false
-            );
+            const dao = await organizer.orgs(multisig.address);
+
+            // verify is dao is offboarded
+            expect(dao.approverCount).to.equal(0);
         });
     });
 });

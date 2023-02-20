@@ -23,10 +23,7 @@ describe("ApprovalManager Contract", () => {
                 masterOperator,
             ] = signers;
             const Organizer = await hre.ethers.getContractFactory("Organizer");
-            organizer = await Organizer.deploy(
-                masterOperator.address,
-                ALLOWANCE_MODULE
-            );
+            organizer = await Organizer.deploy(ALLOWANCE_MODULE);
             await organizer.connect(multisig).deployed();
 
             // onboard a dao
@@ -75,11 +72,9 @@ describe("ApprovalManager Contract", () => {
                 operator_5,
             ] = signers;
 
-            await organizer.addApproverWithThreshold(
-                multisig.address,
-                operator_5.address,
-                3
-            );
+            await organizer
+                .connect(multisig)
+                .addApproverWithThreshold(operator_5.address, 3);
 
             // Checking the Approval Counts
             expect(await organizer.getApproverCount(multisig.address)).to.equal(
@@ -109,11 +104,9 @@ describe("ApprovalManager Contract", () => {
             ] = signers;
 
             expect(
-                organizer.addApproverWithThreshold(
-                    multisig.address,
-                    operator_4.address,
-                    0
-                )
+                organizer
+                    .connect(multisig)
+                    .addApproverWithThreshold(operator_4.address, 0)
             ).to.revertedWith("CS015");
         });
 
@@ -128,11 +121,9 @@ describe("ApprovalManager Contract", () => {
             ] = signers;
 
             expect(
-                organizer.addApproverWithThreshold(
-                    multisig.address,
-                    operator_5.address,
-                    0
-                )
+                organizer
+                    .connect(multisig)
+                    .addApproverWithThreshold(operator_5.address, 0)
             ).to.revertedWith("CS002");
         });
 
@@ -147,18 +138,16 @@ describe("ApprovalManager Contract", () => {
             ] = signers;
 
             expect(
-                organizer.addApproverWithThreshold(
-                    multisig.address,
-                    ADDRESS_ZERO,
-                    3
-                )
+                organizer
+                    .connect(multisig)
+                    .addApproverWithThreshold(ADDRESS_ZERO, 3)
             ).to.revertedWith("CS003");
         });
 
         it("Should change the threshold", async function () {
             const [multisig] = signers;
 
-            await organizer.changeThreshold(multisig.address, 1);
+            await organizer.connect(multisig).changeThreshold(1);
 
             // Verifying Threshold
             expect(await organizer.getThreshold(multisig.address)).to.equal(1);
@@ -168,7 +157,7 @@ describe("ApprovalManager Contract", () => {
             const [multisig] = signers;
 
             expect(
-                organizer.changeThreshold(multisig.address, 0)
+                organizer.connect(multisig).changeThreshold(0)
             ).to.revertedWith("CS015");
         });
 
@@ -176,7 +165,7 @@ describe("ApprovalManager Contract", () => {
             const [multisig] = signers;
 
             expect(
-                organizer.changeThreshold(multisig.address, 7)
+                organizer.connect(multisig).changeThreshold(7)
             ).to.revertedWith("CS016");
         });
 
@@ -190,12 +179,9 @@ describe("ApprovalManager Contract", () => {
                 operator_5,
             ] = signers;
 
-            await organizer.removeApprover(
-                multisig.address,
-                SENTINEL_ADDRESS,
-                operator_5.address,
-                2
-            );
+            await organizer
+                .connect(multisig)
+                .removeApprover(SENTINEL_ADDRESS, operator_5.address, 2);
 
             // Checking the Approval Counts
             expect(await organizer.getApproverCount(multisig.address)).to.equal(
@@ -225,12 +211,9 @@ describe("ApprovalManager Contract", () => {
             ] = signers;
 
             expect(
-                organizer.removeApprover(
-                    multisig.address,
-                    operator_1.address,
-                    operator_5.address,
-                    2
-                )
+                organizer
+                    .connect(multisig)
+                    .removeApprover(operator_1.address, operator_5.address, 2)
             ).to.revertedWith("CS017");
         });
 
@@ -238,12 +221,13 @@ describe("ApprovalManager Contract", () => {
             const [multisig, operator_1, operator_2, operator_3, operator_4] =
                 signers;
 
-            await organizer.swapApprover(
-                multisig.address,
-                SENTINEL_ADDRESS,
-                operator_1.address,
-                operator_4.address
-            );
+            await organizer
+                .connect(multisig)
+                .swapApprover(
+                    SENTINEL_ADDRESS,
+                    operator_1.address,
+                    operator_4.address
+                );
 
             // Verifying Threshold
             expect(await organizer.getApproverCount(multisig.address)).to.equal(

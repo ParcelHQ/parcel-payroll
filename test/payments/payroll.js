@@ -22,10 +22,7 @@ describe("Payroll Contract", () => {
         it("deploy", async function () {
             const [multisig, __, ___, ____, masterOperator] = signers;
             const Organizer = await hre.ethers.getContractFactory("Organizer");
-            organizer = await Organizer.deploy(
-                masterOperator.address,
-                ALLOWANCE_MODULE
-            );
+            organizer = await Organizer.deploy(ALLOWANCE_MODULE);
             await organizer.connect(multisig).deployed();
         });
 
