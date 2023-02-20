@@ -21,6 +21,8 @@
   "dependencies": {
     "@nomiclabs/hardhat-etherscan": "^3.1.6",
     "@openzeppelin/contracts": "^4.8.1",
+    "@openzeppelin/contracts-upgradeable": "^4.8.1",
+    "@openzeppelin/hardhat-upgrades": "^1.22.1",
     "dotenv": "^16.0.3",
     "hardhat-gas-reporter": "^1.0.9",
     "merkletreejs": "^0.3.9"

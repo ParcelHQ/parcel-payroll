@@ -2,14 +2,20 @@
 pragma solidity ^0.8.9;
 
 import "./payroll/ApproverManager.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./payroll/PayrollManager.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title Organizer - A utility smart contract for Orgss to define and manage their Organizational structure.
 /// @author Sriram Kasyap Meduri - <sriram@parcel.money>
 /// @author Krishna Kant Sharma - <krishna@parcel.money>
 
-contract Organizer is ApproverManager, PayrollManager, Ownable {
+contract Organizer is
+    Initializable,
+    ApproverManager,
+    PausableUpgradeable,
+    PayrollManager
+{
     //  Events
     //  Org Onboarded
     event OrgOnboarded(
@@ -22,10 +28,10 @@ contract Organizer is ApproverManager, PayrollManager, Ownable {
     event OrgOffboarded(address indexed orgAddress);
 
     /**
-     * @dev Constructor
+     * @dev Initializer for proxy contract
      * @param _allowanceAddress - Address of the Allowance Module on current Network
      */
-    constructor(address _allowanceAddress) Ownable() {
+    function initialize(address _allowanceAddress) public initializer {
         ALLOWANCE_MODULE = _allowanceAddress;
     }
 

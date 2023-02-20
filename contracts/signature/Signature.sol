@@ -21,10 +21,11 @@ contract Signature {
         }
     }
 
-    bytes32 internal DOMAIN_SEPARATOR =
+    function getDomainSeperator() internal view returns (bytes32) {
         keccak256(
             abi.encode(EIP712_DOMAIN_TYPEHASH, getChainId(), address(this))
         );
+    }
 
     /**
      * @dev validate the signature of the payroll transaction
@@ -38,7 +39,7 @@ contract Signature {
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
-                DOMAIN_SEPARATOR,
+                getDomainSeperator(),
                 keccak256(abi.encode(PAYROLL_TX_TYPEHASH, rootHash))
             )
         );

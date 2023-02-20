@@ -1,6 +1,8 @@
+require("@nomiclabs/hardhat-ethers");
 require("@nomicfoundation/hardhat-toolbox");
 require("@nomiclabs/hardhat-etherscan");
 require("hardhat-gas-reporter");
+require("@openzeppelin/hardhat-upgrades");
 require("dotenv").config();
 const tenderly = require("@tenderly/hardhat-tenderly");
 tenderly.setup({
