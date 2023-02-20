@@ -157,6 +157,19 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
             }
         }
 
+        // create a new array to store initial balances of  payment tokens
+        uint256[] memory initialBalances = new uint256[](paymentTokens.length);
+
+        for (uint256 i = 0; i < paymentTokens.length; i++) {
+            if (paymentTokens[i] == address(0)) {
+                initialBalances[i] = address(this).balance;
+            } else {
+                initialBalances[i] = IERC20(paymentTokens[i]).balanceOf(
+                    address(this)
+                );
+            }
+        }
+
         // Loop through the payouts
         for (uint256 i = 0; i < to.length; i++) {
             // Generate the leaf from the payout data
@@ -206,8 +219,11 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
         for (uint256 i = 0; i < paymentTokens.length; i++) {
             if (paymentTokens[i] == address(0)) {
                 // Revert if the contract has any ether left
-                require(address(this).balance == 0, "CS018");
-            } else if (IERC20(paymentTokens[i]).balanceOf(address(this)) > 0) {
+                require(address(this).balance == initialBalances[i], "CS018");
+            } else if (
+                IERC20(paymentTokens[i]).balanceOf(address(this)) >
+                initialBalances[i]
+            ) {
                 // Revert if the contract has any tokens left
                 revert("CS018");
             }
