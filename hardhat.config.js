@@ -42,22 +42,22 @@ module.exports = {
         },
     },
 
-    networks: {
-        goerli: {
-            url: `https://goerli.infura.io/v3/a610e824d6bc4bef94728de6b76a098f`,
-            accounts: [
-                process.env.PRIVATE_KEYS_1,
-                process.env.PRIVATE_KEYS_2,
-                process.env.PRIVATE_KEYS_3,
-                process.env.PRIVATE_KEYS_4,
-                process.env.PRIVATE_KEYS_5,
-                process.env.PRIVATE_KEYS_6,
-                process.env.PRIVATE_KEYS_7,
-                process.env.PRIVATE_KEYS_8,
-            ],
-            chainId: 5,
-        },
-    },
+    // networks: {
+    //     goerli: {
+    //         url: `https://goerli.infura.io/v3/a610e824d6bc4bef94728de6b76a098f`,
+    //         accounts: [
+    //             process.env.PRIVATE_KEYS_1,
+    //             process.env.PRIVATE_KEYS_2,
+    //             process.env.PRIVATE_KEYS_3,
+    //             process.env.PRIVATE_KEYS_4,
+    //             process.env.PRIVATE_KEYS_5,
+    //             process.env.PRIVATE_KEYS_6,
+    //             process.env.PRIVATE_KEYS_7,
+    //             process.env.PRIVATE_KEYS_8,
+    //         ],
+    //         chainId: 5,
+    //     },
+    // },
 
     // Gas Reporter
     gasReporter: {
