@@ -25,7 +25,7 @@ contract Organizer is ApproverManager, PayrollManager, Ownable {
      * @dev Constructor
      * @param _allowanceAddress - Address of the Allowance Module on current Network
      */
-    constructor(address _allowanceAddress) {
+    constructor(address _allowanceAddress) Ownable() {
         ALLOWANCE_MODULE = _allowanceAddress;
     }
 
