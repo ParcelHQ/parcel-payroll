@@ -2,6 +2,7 @@ const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { default: MerkleTree } = require("merkletreejs");
+const ORGANIZER_V1_ABI = require("../utils/Organizer_v1");
 
 function encodeMultiSendData(txs) {
     return "0x" + txs.map((tx) => encodeMetaTransaction(tx)).join("");
@@ -46,8 +47,8 @@ describe("PayrollManager", function () {
     describe("Deployment", function () {
         it("Should Deploy the Contract", async function () {
             payrollManager = await ethers.getContractAt(
-                "Organizer",
-                "0x5D73496c3F35A0b0CDC2B5cDf34b565eE42CfEed"
+                ORGANIZER_V1_ABI,
+                "0xd13d91Fedd41e4EF02CD816B598838A827f35C78"
             );
 
             const [operator1, operator2] = await ethers.getSigners();
@@ -223,28 +224,32 @@ describe("PayrollManager", function () {
                 { rootHash: rootsObject[operator2.address] }
             );
 
-            console.log(operator1Sign, operator2Sign, "Signature Done");
+            console.log(SignatureObject, "Signature Done");
             //  Validation Transaction
 
-            const multiSendTransaction = [];
+            // const multiSendTransaction = [];
+            const sortedOperators = [operator1.address, operator2.address].sort(
+                (a, b) => a - b
+            );
 
-            const validationTransaction = {
-                to: payrollManager.address,
-                value: 0,
-                data: payrollManager.interface.encodeFunctionData(
-                    "validatePayouts",
-                    [
-                        "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
-                        [root_1, root_2],
-                        [operator1Sign, operator2Sign],
-                        ["0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C"],
-                        [1000000],
-                    ]
-                ),
-                gasLimit: 9000000,
-            };
+            console.log({ sortedOperators });
+            // const validationTransaction = {
+            //     to: payrollManager.address,
+            //     value: 0,
+            //     data: payrollManager.interface.encodeFunctionData(
+            //         "validatePayouts",
+            //         [
+            //             "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
+            //             sortedOperators.map((a) => rootsObject[a]),
+            //             sortedOperators.map((a) => SignatureObject[a]),
+            //             ["0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C"],
+            //             [1000000],
+            //         ]
+            //     ),
+            //     gasLimit: 9000000,
+            // };
 
-            multiSendTransaction.push(validationTransaction);
+            // multiSendTransaction.push(validationTransaction);
 
             //  Execution transaction
 
@@ -291,8 +296,8 @@ describe("PayrollManager", function () {
                 amounts,
                 payoutNonces,
                 proofs,
-                Object(rootsObject).values(),
-                Object(SignatureObject).values(),
+                sortedOperators.map((a) => rootsObject[a]),
+                sortedOperators.map((a) => SignatureObject[a]),
                 ["0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C"],
                 [600],
                 { gasLimit: 9000000 }

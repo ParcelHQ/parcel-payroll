@@ -10,12 +10,16 @@ async function main() {
     // to make sure everything is compiled
     // await run("compile");
     // We get the contract to deploy
-    const [address1] = await ethers.getSigners();
-    const ProxyFactory = await ethers.getContractFactory("Proxy");
 
-    //   Organizer Contract deployed on Goerli: 0xC4b5862e55595389C99D78CEF5b0B95d147A22e3
+    const [, parcelDevOperator] = await ethers.getSigners();
+    console.log(parcelDevOperator.address);
+    const ProxyFactory = await ethers.getContractFactory("ParcelPayroll");
+
+    //   Organizer Contract deployed on Goerli: 0x5D73496c3F35A0b0CDC2B5cDf34b565eE42CfEed
     const Proxy = await ProxyFactory.deploy(
-        "0xE986c310094b23399D55B832BCC33E2849336a4e"
+        "0x5D73496c3F35A0b0CDC2B5cDf34b565eE42CfEed",
+        "0x",
+        parcelDevOperator.address
     );
 
     await Proxy.deployed();
