@@ -196,6 +196,8 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
         }
     }
 
+    receive() external payable {}
+
     /**
      * @dev Execute transaction from Gnosis Safe
      * @param safeAddress Address of the Gnosis Safe
