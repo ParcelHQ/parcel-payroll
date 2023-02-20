@@ -40,9 +40,16 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
     ) external {
         address safeAddress = msg.sender;
 
+        require(
+            orgs[safeAddress].approverCount == 0,
+            "Organizer: Org already onboarded"
+        );
+
         require(_approvers.length > 0, "CS000");
 
         require(_approvers.length >= approvalsRequired, "CS000");
+
+        require(approvalsRequired != 0, "CS004");
 
         address currentapprover = SENTINEL_ADDRESS;
 

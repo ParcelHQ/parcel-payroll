@@ -25,7 +25,9 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
         uint256 bitIndex = payoutNonce % 256;
 
         if (slot >= packedPayoutNonces.length) {
-            packedPayoutNonces.push(1);
+            while (packedPayoutNonces.length != slot) {
+                packedPayoutNonces.push(0);
+            }
         }
 
         if (flag) {
