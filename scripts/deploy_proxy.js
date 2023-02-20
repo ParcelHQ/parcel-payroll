@@ -16,7 +16,7 @@ async function main() {
 
     //   Organizer Contract deployed on Goerli: 0xC4b5862e55595389C99D78CEF5b0B95d147A22e3
     const Proxy = await ProxyFactory.deploy(
-        "0x874F8b6Ad9918c3D7d04adC159ba72a6C8C2D542",
+        "0x369dA3c4e0Beac8c88Fb3C91bf8bfB7dA22a69C2",
         "0x",
         addresses[0].address
     );

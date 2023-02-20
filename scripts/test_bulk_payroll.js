@@ -36,6 +36,8 @@ const MultisendABi = [
     },
 ];
 
+const BASE_PAYOUT_NONCE = 0;
+
 describe("PayrollManager", function () {
     // We define a fixture to reuse the same setup in every test.
     // We use loadFixture to run this setup once, snapshot that state,
@@ -47,53 +49,54 @@ describe("PayrollManager", function () {
         it("Should Deploy the Contract", async function () {
             payrollManager = await ethers.getContractAt(
                 "Organizer",
-                "0x874f8b6ad9918c3d7d04adc159ba72a6c8c2d542"
+                "0x38a1b56023A42005773e6296aeC72D149b4eaFA7"
             );
 
             const [operator1, operator2] = await ethers.getSigners();
             console.log(operator1.address);
+            console.log(operator2.address);
             const payout_1 = {
                 to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
                 tokenAddress: "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
                 amount: 100,
-                payoutNonce: 1,
+                payoutNonce: BASE_PAYOUT_NONCE + 0,
             };
             const payout_2 = {
                 to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
                 tokenAddress: "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
                 amount: 100,
-                payoutNonce: 2,
+                payoutNonce: BASE_PAYOUT_NONCE + 1,
             };
             const payout_3 = {
                 to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
                 tokenAddress: "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
                 amount: 100,
-                payoutNonce: 3,
+                payoutNonce: BASE_PAYOUT_NONCE + 2,
             };
             const payout_4 = {
                 to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
                 tokenAddress: "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
                 amount: 100,
-                payoutNonce: 4,
+                payoutNonce: BASE_PAYOUT_NONCE + 3,
             };
             const payout_5 = {
                 to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
                 tokenAddress: "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
                 amount: 100,
-                payoutNonce: 5,
+                payoutNonce: BASE_PAYOUT_NONCE + 4,
             };
             const payout_6 = {
                 to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
                 tokenAddress: "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
                 amount: 100,
-                payoutNonce: 6,
+                payoutNonce: BASE_PAYOUT_NONCE + 5,
             };
 
             const payout_7 = {
                 to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
                 tokenAddress: "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
                 amount: 100,
-                payoutNonce: 13,
+                payoutNonce: BASE_PAYOUT_NONCE + 6,
             };
 
             const encodedHash_1 = await payrollManager
@@ -202,6 +205,7 @@ describe("PayrollManager", function () {
 
             let domainData = {
                 chainId: 5,
+                // verifyingContract: "0x874F8b6Ad9918c3D7d04adC159ba72a6C8C2D542",
                 verifyingContract: payrollManager.address,
             };
 
@@ -222,31 +226,6 @@ describe("PayrollManager", function () {
                 },
                 { rootHash: rootsObject[operator2.address] }
             );
-
-            // console.log(operator1Sign, operator2Sign, "Signature Done");
-            //  Validation Transaction
-
-            const multiSendTransaction = [];
-
-            // const validationTransaction = {
-            //     to: payrollManager.address,
-            //     value: 0,
-            //     data: payrollManager.interface.encodeFunctionData(
-            //         "validatePayouts",
-            //         [
-            //             "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
-            //             [root_1, root_2],
-            //             [operator1Sign, operator2Sign],
-            //             ["0x07865c6E87B9F70255377e024ace6630C1Eaa37F"],
-            //             [1000000],
-            //         ]
-            //     ),
-            //     gasLimit: 9000000,
-            // };
-
-            // multiSendTransaction.push(validationTransaction);
-
-            //  Execution transaction
 
             const payouts = [
                 payout_1,
@@ -287,6 +266,10 @@ describe("PayrollManager", function () {
             const sortedOperators = [operator1.address, operator2.address].sort(
                 (a, b) => a - b
             );
+
+            console.log({ sortedOperators });
+            console.log(sortedOperators[0] < sortedOperators[1]);
+            console.log({ rootsObject, SignatureObject });
 
             const transaction = await payrollManager.executePayroll(
                 "0xe428E496A0cAC7720593234c5Ae302b085aaE9Ef",
