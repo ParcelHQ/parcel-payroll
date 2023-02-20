@@ -221,7 +221,7 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
                 // Revert if the contract has any ether left
                 require(address(this).balance == initialBalances[i], "CS018");
             } else if (
-                IERC20(paymentTokens[i]).balanceOf(address(this)) >
+                IERC20(paymentTokens[i]).balanceOf(address(this)) !=
                 initialBalances[i]
             ) {
                 // Revert if the contract has any tokens left
