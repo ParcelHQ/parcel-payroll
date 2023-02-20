@@ -186,7 +186,10 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
 
         // Check if the contract has any tokens left
         for (uint256 i = 0; i < paymentTokens.length; i++) {
-            if (IERC20(paymentTokens[i]).balanceOf(address(this)) > 0) {
+            if (paymentTokens[i] == address(0)) {
+                // Revert if the contract has any ether left
+                require(address(this).balance == 0, "CS018");
+            } else if (IERC20(paymentTokens[i]).balanceOf(address(this)) > 0) {
                 // Revert if the contract has any tokens left
                 revert("CS018");
             }
