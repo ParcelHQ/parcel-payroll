@@ -17,24 +17,30 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
 
     /**
      * @dev Set usage status of a payout nonce
-     * @param flag Boolean to pack, true for used, false for unused
      * @param payoutNonce Payout nonce to set
      */
-    function packPayoutNonce(bool flag, uint256 payoutNonce) internal {
+    function packPayoutNonce(uint256 payoutNonce) internal {
+        // Packed payout nonces are stored in an array of uint256
+        // Each uint256 represents 256 payout nonces
+
+        // Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
         uint256 slot = payoutNonce / 256;
+
+        // The bit index of the uint256 is the payout nonce % 256 (0-255)
         uint256 bitIndex = payoutNonce % 256;
 
+        // If the bit is set, the payout nonce has been used, if not, it has not been used
         if (slot >= packedPayoutNonces.length) {
+            // If the slot is greater than the length of the array, we need to push new uint256s to the array
+            // We need to push enough uint256s to the array so that the slot is the last index of the array
             while (packedPayoutNonces.length != slot) {
                 packedPayoutNonces.push(0);
             }
         }
 
-        if (flag) {
-            packedPayoutNonces[slot] |= 1 << bitIndex;
-        } else {
-            packedPayoutNonces[slot] &= ~(1 << bitIndex);
-        }
+        // Set the bit to 1
+        // This means that the payout nonce has been used
+        packedPayoutNonces[slot] |= 1 << bitIndex;
     }
 
     /**
@@ -43,14 +49,20 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
      * @return Boolean, true for used, false for unused
      */
     function getPayoutNonce(uint256 payoutNonce) internal view returns (bool) {
+        // Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
         uint256 slotIndex = payoutNonce / 256;
+
+        // The bit index of the uint256 is the payout nonce % 256 (0-255)
         uint256 bitIndex = payoutNonce % 256;
+
+        //  If the slot is greater than the length of the array, the payout nonce has not been used
         if (
             packedPayoutNonces.length == 0 ||
-            packedPayoutNonces.length < slotIndex
+            packedPayoutNonces.length <= slotIndex
         ) {
             return false;
         } else {
+            // If the bit is set, the payout nonce has been used, if not, it has not been used
             return (packedPayoutNonces[slotIndex] & (1 << bitIndex)) != 0;
         }
     }
@@ -177,11 +189,11 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
                 if (tokenAddress[i] == address(0)) {
                     // Transfer ether
                     to[i].call{value: amount[i]}("");
-                    packPayoutNonce(true, payoutNonce[i]);
+                    packPayoutNonce(payoutNonce[i]);
                 } else {
                     // Transfer ERC20 tokens
                     IERC20(tokenAddress[i]).safeTransfer(to[i], amount[i]);
-                    packPayoutNonce(true, payoutNonce[i]);
+                    packPayoutNonce(payoutNonce[i]);
                 }
             }
         }
