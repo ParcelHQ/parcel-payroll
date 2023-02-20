@@ -5,17 +5,11 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 // Module Imports
-import "./Validators.sol";
 import "../signature/Signature.sol";
-import "../interfaces/index.sol";
-import "./Modifiers.sol";
+import "../interfaces/AllowanceModule.sol";
+import "./Storage.sol";
 
-contract PayrollManager is
-    SignatureEIP712,
-    Validators,
-    Modifiers,
-    ReentrancyGuard
-{
+contract PayrollManager is Storage, Signature, ReentrancyGuard {
     // Payroll Functions
 
     /**
@@ -70,14 +64,39 @@ contract PayrollManager is
         uint256 amount,
         uint64 payoutNonce
     ) public pure returns (bytes32) {
-        bytes32 encodedHash = keccak256(
-            abi.encode(to, tokenAddress, amount, payoutNonce)
-        );
-        return encodedHash;
+        return keccak256(abi.encode(to, tokenAddress, amount, payoutNonce));
     }
 
     /**
-     * @dev Validate the payroll transaction hashes and execute the payrill
+     * @dev This function validates the signature and verifies if signatures are unique and the approver belongs to safe
+     * @param safeAddress Address to send the funds to
+     * @param roots Address of the token to send
+     * @param signatures Amount of tokens to send
+     */
+    function validateSignatures(
+        address safeAddress,
+        bytes32[] memory roots,
+        bytes[] memory signatures
+    ) internal view {
+        // Validate the roots via approver signatures
+        address currentApprover;
+        for (uint256 i = 0; i < roots.length; i++) {
+            // Recover signer from the signature
+            address signer = validatePayrollTxHashes(roots[i], signatures[i]);
+            // Check if the signer is an approver & is different from the current approver
+            require(
+                signer != SENTINEL_ADDRESS &&
+                    orgs[safeAddress].approvers[signer] != address(0) &&
+                    signer > currentApprover,
+                "CS014"
+            );
+            // Set the current approver to the signer
+            currentApprover = signer;
+        }
+    }
+
+    /**
+     * @dev Validate the payroll transaction hashes and execute the payroll
      * @param safeAddress Address of the safe
      * @param to Addresses to send the funds to
      * @param tokenAddress Addresses of the tokens to send
@@ -106,39 +125,17 @@ contract PayrollManager is
         require(to.length == amount.length, "CS004");
         require(to.length == payoutNonce.length, "CS004");
         require(roots.length == signatures.length, "CS004");
+        require(paymentTokens.length == payoutAmounts.length, "CS004");
 
-        // Boolean array to track validated roots
-        bool[] memory validatedRoots = new bool[](roots.length);
-        {
-            // Validate the roots via approver signatures
-            address currentApprover;
-            for (uint256 i = 0; i < roots.length; i++) {
-                // Recover signer from the signature
-                address signer = validatePayrollTxHashes(
-                    roots[i],
-                    signatures[i]
-                );
-                // Check if the signer is an approver & is different from the current approver
-                require(
-                    _isApprover(safeAddress, signer) &&
-                        signer > currentApprover,
-                    "CS014"
-                );
-                // Set the current approver to the signer
-                currentApprover = signer;
-                // Set the root as validated
-                validatedRoots[i] = true;
-            }
-        }
+        validateSignatures(safeAddress, roots, signatures);
 
         {
             // Fetch the required tokens from the safe via Allowance module
-            for (uint96 index = 0; index < paymentTokens.length; index++) {
+            for (uint256 index = 0; index < paymentTokens.length; index++) {
                 execTransactionFromGnosis(
                     safeAddress,
                     paymentTokens[index],
-                    payoutAmounts[index],
-                    bytes("")
+                    payoutAmounts[index]
                 );
             }
         }
@@ -154,17 +151,14 @@ contract PayrollManager is
             );
 
             // Initialize the approvals counter
-            uint96 approvals;
+            uint256 approvals;
 
             // Loop through the roots
-            for (uint96 j = 0; j < roots.length; j++) {
+            for (uint256 j = 0; j < roots.length; j++) {
                 // Verify the root has been validated
                 // Verify the proof against the current root and increment the approvals counter
-                if (
-                    validatedRoots[j] == true &&
-                    MerkleProof.verify(proof[i][j], roots[j], leaf)
-                ) {
-                    approvals += 1;
+                if (MerkleProof.verify(proof[i][j], roots[j], leaf)) {
+                    ++approvals;
                 }
             }
 
@@ -181,8 +175,7 @@ contract PayrollManager is
                     packPayoutNonce(true, payoutNonce[i]);
                 } else {
                     // Transfer ERC20 tokens
-                    IERC20 erc20 = IERC20(tokenAddress[i]);
-                    erc20.transfer(to[i], amount[i]);
+                    IERC20(tokenAddress[i]).transfer(to[i], amount[i]);
                     packPayoutNonce(true, payoutNonce[i]);
                 }
             }
@@ -190,8 +183,7 @@ contract PayrollManager is
 
         // Check if the contract has any tokens left
         for (uint256 i = 0; i < paymentTokens.length; i++) {
-            IERC20 erc20 = IERC20(paymentTokens[i]);
-            if (erc20.balanceOf(address(this)) > 0) {
+            if (IERC20(paymentTokens[i]).balanceOf(address(this)) > 0) {
                 // Revert if the contract has any tokens left
                 revert("CS018");
             }
@@ -203,28 +195,22 @@ contract PayrollManager is
      * @param safeAddress Address of the Gnosis Safe
      * @param tokenAddress Address of the token to send
      * @param amount Amount of tokens to send
-     * @param signature Signature of the transaction
      */
     function execTransactionFromGnosis(
         address safeAddress,
         address tokenAddress,
-        uint96 amount,
-        bytes memory signature
+        uint96 amount
     ) internal {
-        AlowanceModule allowance = AlowanceModule(ALLOWANCE_MODULE);
-
-        address payable to = payable(address(this));
-
         // Execute payout via allowance module
-        allowance.executeAllowanceTransfer(
-            GnosisSafe(safeAddress),
+        AllowanceModule(ALLOWANCE_MODULE).executeAllowanceTransfer(
+            safeAddress,
             tokenAddress,
-            to,
+            payable(address(this)),
             amount,
             0x0000000000000000000000000000000000000000,
             0,
             address(this),
-            signature
+            bytes("")
         );
     }
 }

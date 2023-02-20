@@ -1,10 +1,10 @@
-//contracts/Organizer.sol
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import "./Modifiers.sol";
+
+import "./Storage.sol";
 
 /// @title Approver Manager for Organizer Contract
-abstract contract ApproverManager is Modifiers {
+abstract contract ApproverManager is Storage {
     // Events
     event ApproverAdded(address indexed safeAddress, address indexed operator);
     event ApproverRemoved(
@@ -22,10 +22,11 @@ abstract contract ApproverManager is Modifiers {
     /// @param approver New approver address.
     /// @param threshold New threshold.
     function addApproverWithThreshold(
-        address safeAddress,
         address approver,
         uint128 threshold
-    ) public onlyOnboarded(safeAddress) onlyMultisig(safeAddress) {
+    ) public {
+        _onlyOnboarded(msg.sender);
+
         // Approver address cannot be null, the sentinel or the Safe itself.
         require(
             approver != address(0) &&
@@ -34,18 +35,18 @@ abstract contract ApproverManager is Modifiers {
             "CS003"
         );
         // No duplicate approvers allowed.
-        require(orgs[safeAddress].approvers[approver] == address(0), "CS002");
+        require(orgs[msg.sender].approvers[approver] == address(0), "CS002");
 
-        orgs[safeAddress].approvers[approver] = orgs[safeAddress].approvers[
+        orgs[msg.sender].approvers[approver] = orgs[msg.sender].approvers[
             SENTINEL_ADDRESS
         ];
-        orgs[safeAddress].approvers[SENTINEL_ADDRESS] = approver;
-        orgs[safeAddress].approverCount++;
+        orgs[msg.sender].approvers[SENTINEL_ADDRESS] = approver;
+        orgs[msg.sender].approverCount++;
 
-        emit ApproverAdded(safeAddress, approver);
+        emit ApproverAdded(msg.sender, approver);
         // Change threshold if threshold was changed.
-        if (threshold != orgs[safeAddress].approvalsRequired)
-            changeThreshold(safeAddress, threshold);
+        if (threshold != orgs[msg.sender].approvalsRequired)
+            changeThreshold(threshold);
     }
 
     /// @dev Allows to remove an approver from the Safe and update the threshold at the same time.
@@ -55,29 +56,30 @@ abstract contract ApproverManager is Modifiers {
     /// @param approver Approver address to be removed.
     /// @param threshold New threshold.
     function removeApprover(
-        address safeAddress,
         address prevApprover,
         address approver,
         uint128 threshold
-    ) public onlyOnboarded(safeAddress) onlyMultisig(safeAddress) {
+    ) public {
+        _onlyOnboarded(msg.sender);
+
         // Only allow to remove an approver, if threshold can still be reached.
-        require(orgs[safeAddress].approverCount - 1 >= threshold, "CS016");
+        require(orgs[msg.sender].approverCount - 1 >= threshold, "CS016");
         // Validate approver address and check that it corresponds to approver index.
         require(
             approver != address(0) && approver != SENTINEL_ADDRESS,
             "CS003"
         );
-        require(orgs[safeAddress].approvers[prevApprover] == approver, "CS017");
+        require(orgs[msg.sender].approvers[prevApprover] == approver, "CS017");
 
-        orgs[safeAddress].approvers[prevApprover] = orgs[safeAddress].approvers[
+        orgs[msg.sender].approvers[prevApprover] = orgs[msg.sender].approvers[
             approver
         ];
-        orgs[safeAddress].approvers[approver] = address(0);
-        orgs[safeAddress].approverCount--;
-        emit RemovedApprover(approver, safeAddress);
+        orgs[msg.sender].approvers[approver] = address(0);
+        orgs[msg.sender].approverCount--;
+        emit RemovedApprover(approver, msg.sender);
         // Change threshold if threshold was changed.
-        if (threshold != orgs[safeAddress].approvalsRequired)
-            changeThreshold(safeAddress, threshold);
+        if (threshold != orgs[msg.sender].approvalsRequired)
+            changeThreshold(threshold);
     }
 
     /// @dev Allows to swap/replace an approver with another address.
@@ -87,11 +89,12 @@ abstract contract ApproverManager is Modifiers {
     /// @param oldApprover Approver address to be replaced.
     /// @param newApprover New approver address.
     function swapApprover(
-        address safeAddress,
         address prevApprover,
         address oldApprover,
         address newApprover
-    ) public onlyOnboarded(safeAddress) onlyMultisig(safeAddress) {
+    ) public {
+        _onlyOnboarded(msg.sender);
+
         // Approver address cannot be null, the sentinel or the Safe itself.
         require(
             newApprover != address(0) &&
@@ -100,10 +103,7 @@ abstract contract ApproverManager is Modifiers {
             "CS003"
         );
         // No duplicate approvers allowed.
-        require(
-            orgs[safeAddress].approvers[newApprover] == address(0),
-            "CS002"
-        );
+        require(orgs[msg.sender].approvers[newApprover] == address(0), "CS002");
 
         // Validate oldApprovers address and check that it corresponds to approver index.
         require(
@@ -112,32 +112,31 @@ abstract contract ApproverManager is Modifiers {
         );
 
         require(
-            orgs[safeAddress].approvers[prevApprover] == oldApprover,
+            orgs[msg.sender].approvers[prevApprover] == oldApprover,
             "CS017"
         );
-        orgs[safeAddress].approvers[newApprover] = orgs[safeAddress].approvers[
+        orgs[msg.sender].approvers[newApprover] = orgs[msg.sender].approvers[
             oldApprover
         ];
-        orgs[safeAddress].approvers[prevApprover] = newApprover;
-        orgs[safeAddress].approvers[oldApprover] = address(0);
-        emit RemovedApprover(oldApprover, safeAddress);
-        emit ApproverAdded(safeAddress, newApprover);
+        orgs[msg.sender].approvers[prevApprover] = newApprover;
+        orgs[msg.sender].approvers[oldApprover] = address(0);
+        emit RemovedApprover(oldApprover, msg.sender);
+        emit ApproverAdded(msg.sender, newApprover);
     }
 
     /// @dev Allows to update the number of required confirmations by Safe approvers.
     ///      This can only be done via a Multisig transaction.
     /// @notice Changes the approvals required to `_threshold`.
     /// @param threshold New threshold.
-    function changeThreshold(
-        address safeAddress,
-        uint128 threshold
-    ) public onlyOnboarded(safeAddress) onlyMultisig(safeAddress) {
+    function changeThreshold(uint128 threshold) public {
+        _onlyOnboarded(msg.sender);
+
         // Validate that threshold is smaller than number of approvers.
-        require(threshold <= orgs[safeAddress].approverCount, "CS016");
+        require(threshold <= orgs[msg.sender].approverCount, "CS016");
         // There has to be at least one Safe Approver.
         require(threshold >= 1, "CS015");
-        orgs[safeAddress].approvalsRequired = threshold;
-        emit ChangedThreshold(threshold, safeAddress);
+        orgs[msg.sender].approvalsRequired = threshold;
+        emit ChangedThreshold(threshold, msg.sender);
     }
 
     /**
@@ -147,7 +146,9 @@ abstract contract ApproverManager is Modifiers {
      */
     function getApprovers(
         address _safeAddress
-    ) public view onlyOnboarded(_safeAddress) returns (address[] memory) {
+    ) public view returns (address[] memory) {
+        _onlyOnboarded(_safeAddress);
+
         address[] memory array = new address[](
             orgs[_safeAddress].approverCount
         );
@@ -170,7 +171,8 @@ abstract contract ApproverManager is Modifiers {
      */
     function getApproverCount(
         address _safeAddress
-    ) external view onlyOnboarded(_safeAddress) returns (uint256) {
+    ) external view returns (uint256) {
+        _onlyOnboarded(_safeAddress);
         return orgs[_safeAddress].approverCount;
     }
 
@@ -181,7 +183,12 @@ abstract contract ApproverManager is Modifiers {
      */
     function getThreshold(
         address _safeAddress
-    ) external view onlyOnboarded(_safeAddress) returns (uint256) {
+    ) external view returns (uint256) {
+        _onlyOnboarded(_safeAddress);
         return orgs[_safeAddress].approvalsRequired;
+    }
+
+    function _onlyOnboarded(address _safeAddress) internal view {
+        require(orgs[_safeAddress].approverCount != 0, "CS009");
     }
 }

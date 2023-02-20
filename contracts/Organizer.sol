@@ -1,11 +1,8 @@
-//contracts/Organizer.sol
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
 import "./payroll/ApproverManager.sol";
-// import "./organizer/ApprovalMatrix.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-// import "./organizer/PayoutManager.sol";
 import "./payroll/PayrollManager.sol";
 
 /// @title Organizer - A utility smart contract for Orgss to define and manage their Organizational structure.
@@ -27,11 +24,9 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
     /**
      * @dev Constructor
      * @param _allowanceAddress - Address of the Allowance Module on current Network
-     * @param _masterOperator - Address of the Master Operator
      */
-    constructor(address _allowanceAddress, address _masterOperator) {
+    constructor(address _allowanceAddress) {
         ALLOWANCE_MODULE = _allowanceAddress;
-        MASTER_OPERATOR = _masterOperator;
     }
 
     /**
@@ -42,7 +37,7 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
     function onboard(
         address[] calldata _approvers,
         uint128 approvalsRequired
-    ) external onlyMultisig(msg.sender) {
+    ) external {
         address safeAddress = msg.sender;
 
         require(_approvers.length > 0, "CS000");
@@ -76,7 +71,8 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
             orgs[safeAddress].approvers[currentapprover] = approver;
             currentapprover = approver;
 
-            // TODO: emit Approver added event
+            emit ApproverAdded(safeAddress, approver);
+
             orgs[safeAddress].approverCount++;
         }
         orgs[safeAddress].approvers[currentapprover] = SENTINEL_ADDRESS;
@@ -85,24 +81,20 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
 
     /**
      * @dev Offboard an Org, remove all approvers and delete the Org
-     * @param _safeAddress - Address of the Org
+   
      */
-    function offboard(
-        address _safeAddress
-    ) external onlyOnboarded(_safeAddress) onlyMultisig(_safeAddress) {
+    function offboard() external {
+        _onlyOnboarded(msg.sender);
+
         // Remove all approvers in Orgs
-        address currentapprover = orgs[_safeAddress].approvers[
-            SENTINEL_ADDRESS
-        ];
+        address currentapprover = orgs[msg.sender].approvers[SENTINEL_ADDRESS];
         while (currentapprover != SENTINEL_ADDRESS) {
-            address nextapprover = orgs[_safeAddress].approvers[
-                currentapprover
-            ];
-            delete orgs[_safeAddress].approvers[currentapprover];
+            address nextapprover = orgs[msg.sender].approvers[currentapprover];
+            delete orgs[msg.sender].approvers[currentapprover];
             currentapprover = nextapprover;
         }
 
-        delete orgs[_safeAddress];
-        emit OrgOffboarded(_safeAddress);
+        delete orgs[msg.sender];
+        emit OrgOffboarded(msg.sender);
     }
 }
