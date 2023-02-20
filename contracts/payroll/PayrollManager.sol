@@ -174,7 +174,7 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
                 // Transfer the funds to the recipient (to) addresses
                 if (tokenAddress[i] == address(0)) {
                     // Transfer ether
-                    payable(to[i]).transfer(amount[i]);
+                    payable(to[i]).call{value: amount[i]}("");
                     packPayoutNonce(true, payoutNonce[i]);
                 } else {
                     // Transfer ERC20 tokens
