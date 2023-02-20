@@ -2,9 +2,10 @@
 pragma solidity ^0.8.0;
 
 import "./Storage.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
 /// @title Approver Manager for Organizer Contract
-abstract contract ApproverManager is Storage {
+abstract contract ApproverManager is Storage, Pausable {
     // Events
     event ApproverAdded(address indexed safeAddress, address indexed operator);
     event ApproverRemoved(
@@ -24,7 +25,7 @@ abstract contract ApproverManager is Storage {
     function addApproverWithThreshold(
         address approver,
         uint128 threshold
-    ) public {
+    ) public whenNotPaused {
         _onlyOnboarded(msg.sender);
 
         // Approver address cannot be null, the sentinel or the Safe itself.
@@ -59,7 +60,7 @@ abstract contract ApproverManager is Storage {
         address prevApprover,
         address approver,
         uint128 threshold
-    ) public {
+    ) public whenNotPaused {
         _onlyOnboarded(msg.sender);
 
         // Only allow to remove an approver, if threshold can still be reached.
@@ -92,7 +93,7 @@ abstract contract ApproverManager is Storage {
         address prevApprover,
         address oldApprover,
         address newApprover
-    ) public {
+    ) public whenNotPaused {
         _onlyOnboarded(msg.sender);
 
         // Approver address cannot be null, the sentinel or the Safe itself.
@@ -128,7 +129,7 @@ abstract contract ApproverManager is Storage {
     ///      This can only be done via a Multisig transaction.
     /// @notice Changes the approvals required to `_threshold`.
     /// @param threshold New threshold.
-    function changeThreshold(uint128 threshold) public {
+    function changeThreshold(uint128 threshold) public whenNotPaused {
         _onlyOnboarded(msg.sender);
 
         // Validate that threshold is smaller than number of approvers.

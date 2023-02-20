@@ -3,13 +3,14 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
 // Module Imports
 import "../signature/Signature.sol";
 import "../interfaces/AllowanceModule.sol";
 import "./Storage.sol";
 
-contract PayrollManager is Storage, Signature, ReentrancyGuard {
+contract PayrollManager is Storage, Signature, ReentrancyGuard, Pausable {
     // Payroll Functions
 
     /**
@@ -119,7 +120,7 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
         bytes[] memory signatures,
         address[] memory paymentTokens,
         uint96[] memory payoutAmounts
-    ) external nonReentrant {
+    ) external nonReentrant whenNotPaused {
         // Validate the Input Data
         require(to.length == tokenAddress.length, "CS004");
         require(to.length == amount.length, "CS004");
