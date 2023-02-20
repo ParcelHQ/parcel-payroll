@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
@@ -11,6 +12,8 @@ import "./Storage.sol";
 
 contract PayrollManager is Storage, Signature, ReentrancyGuard {
     // Payroll Functions
+
+    using SafeERC20 for IERC20;
 
     /**
      * @dev Set usage status of a payout nonce
@@ -175,7 +178,7 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
                     packPayoutNonce(true, payoutNonce[i]);
                 } else {
                     // Transfer ERC20 tokens
-                    IERC20(tokenAddress[i]).transfer(to[i], amount[i]);
+                    IERC20(tokenAddress[i]).safeTransfer(to[i], amount[i]);
                     packPayoutNonce(true, payoutNonce[i]);
                 }
             }
