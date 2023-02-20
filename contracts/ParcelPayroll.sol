@@ -9,9 +9,25 @@ contract ParcelPayroll is ERC1967Proxy {
         address _logic,
         bytes memory _data,
         address _admin
-    ) ERC1967Proxy(_logic, _data) {}
+    ) ERC1967Proxy(_logic, _data) {
+        _changeAdmin(_admin);
+    }
 
-    function _implementation() internal view override returns (address) {
+    function getimplementation() public view returns (address) {
         return _getImplementation();
+    }
+
+    function getAdmin() public view returns (address) {
+        return _getAdmin();
+    }
+
+    function upgradeTo(address _newImplementation) public {
+        require(_getAdmin() == msg.sender, "Only admin can upgrade");
+        _upgradeTo(_newImplementation);
+    }
+
+    function setAdmin(address _newAdmin) public {
+        require(_getAdmin() == msg.sender, "Only admin can change admin");
+        _changeAdmin(_newAdmin);
     }
 }

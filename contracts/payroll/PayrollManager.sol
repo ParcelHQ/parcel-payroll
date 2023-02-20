@@ -2,14 +2,14 @@
 pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 // Module Imports
 import "../signature/Signature.sol";
 import "../interfaces/AllowanceModule.sol";
 import "./Storage.sol";
 
-contract PayrollManager is Storage, Signature, ReentrancyGuard {
+contract PayrollManager is ReentrancyGuardUpgradeable, Storage, Signature {
     // Payroll Functions
 
     /**

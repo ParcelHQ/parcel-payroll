@@ -2,7 +2,8 @@
 // but useful for running the script in a standalone fashion through `node <script>`.
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-const { ethers } = require("hardhat");
+const { ethers, upgrades } = require("hardhat");
+const { ALLOWANCE_MODULE } = require("../utils/constant");
 
 async function main() {
     // Hardhat always runs the compile task when running scripts through it.
@@ -11,18 +12,15 @@ async function main() {
     // await run("compile");
     // We get the contract to deploy
     const addresses = await ethers.getSigners();
-    const ProxyFactory = await ethers.getContractFactory("ParcelPayroll");
-    console.log({ addresses });
+    const Organizer = await ethers.getContractFactory("Organizer");
 
     //   Organizer Contract deployed on Goerli: 0xC4b5862e55595389C99D78CEF5b0B95d147A22e3
-    const Proxy = await ProxyFactory.deploy(
-        "0x874F8b6Ad9918c3D7d04adC159ba72a6C8C2D542",
-        "0x",
-        addresses[0].address
-    );
+    const Proxy = await upgrades.deployProxy(Organizer, [ALLOWANCE_MODULE], {
+        initializer: "initialize",
+    });
 
     await Proxy.deployed();
-    console.log("Proxy deployed to: ", Proxy.address);
+    console.log(Proxy.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
