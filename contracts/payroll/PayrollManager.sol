@@ -196,6 +196,9 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
         }
     }
 
+    /**
+     * @dev Receive Ether
+     */
     receive() external payable {}
 
     /**
