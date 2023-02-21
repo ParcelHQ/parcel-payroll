@@ -2,14 +2,14 @@
 pragma solidity 0.8.9;
 
 import "./payroll/ApproverManager.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import "./payroll/PayrollManager.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title Organizer - A utility smart contract for Orgss to define and manage their Organizational structure.
 /// @author Sriram Kasyap Meduri - <sriram@parcel.money>
 /// @author Krishna Kant Sharma - <krishna@parcel.money>
 
-contract Organizer is ApproverManager, Pausable, PayrollManager {
+contract Organizer is ApproverManager, PayrollManager, Ownable {
     //  Events
     //  Org Onboarded
     event OrgOnboarded(
@@ -25,7 +25,7 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
      * @dev Constructor
      * @param _allowanceAddress - Address of the Allowance Module on current Network
      */
-    constructor(address _allowanceAddress) {
+    constructor(address _allowanceAddress) Ownable() {
         ALLOWANCE_MODULE = _allowanceAddress;
 
         // Initialize packedPayoutNonces array with a 500 single 0
@@ -43,7 +43,7 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
     function onboard(
         address[] calldata _approvers,
         uint128 approvalsRequired
-    ) external {
+    ) external whenNotPaused {
         address safeAddress = msg.sender;
 
         require(
@@ -109,5 +109,27 @@ contract Organizer is ApproverManager, Pausable, PayrollManager {
 
         delete orgs[msg.sender];
         emit OrgOffboarded(msg.sender);
+    }
+
+    /**
+     * @dev Pause the contract
+     */
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @dev Unpause the contract
+     */
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    /**
+     * @dev Renounce ownership of the contract
+     * @notice This function is overridden to prevent renouncing ownership
+     */
+    function renounceOwnership() public view override onlyOwner {
+        revert("Ownable: cannot renounce ownership");
     }
 }
