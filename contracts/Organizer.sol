@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.9;
+pragma solidity 0.8.9;
 
 import "./payroll/ApproverManager.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -35,6 +35,12 @@ contract Organizer is
     function initialize(address _allowanceAddress) public initializer {
         __Ownable_init();
         ALLOWANCE_MODULE = _allowanceAddress;
+
+        // Initialize packedPayoutNonces array with a 500 single 0
+        // This is to avoid the packedPayoutNonces array being empty when the payout is created to reduce gas costs
+        while (packedPayoutNonces.length <= 500) {
+            packedPayoutNonces.push(0);
+        }
     }
 
     /**
@@ -48,9 +54,16 @@ contract Organizer is
     ) external whenNotPaused {
         address safeAddress = msg.sender;
 
+        require(
+            orgs[safeAddress].approverCount == 0,
+            "Organizer: Org already onboarded"
+        );
+
         require(_approvers.length > 0, "CS000");
 
         require(_approvers.length >= approvalsRequired, "CS000");
+
+        require(approvalsRequired != 0, "CS004");
 
         address currentapprover = SENTINEL_ADDRESS;
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+pragma solidity 0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -13,24 +14,34 @@ import "./Storage.sol";
 contract PayrollManager is ReentrancyGuardUpgradeable, Storage, Signature {
     // Payroll Functions
 
+    using SafeERC20 for IERC20;
+
     /**
      * @dev Set usage status of a payout nonce
-     * @param flag Boolean to pack, true for used, false for unused
      * @param payoutNonce Payout nonce to set
      */
-    function packPayoutNonce(bool flag, uint256 payoutNonce) internal {
+    function packPayoutNonce(uint256 payoutNonce) internal {
+        // Packed payout nonces are stored in an array of uint256
+        // Each uint256 represents 256 payout nonces
+
+        // Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
         uint256 slot = payoutNonce / 256;
+
+        // The bit index of the uint256 is the payout nonce % 256 (0-255)
         uint256 bitIndex = payoutNonce % 256;
 
+        // If the bit is set, the payout nonce has been used, if not, it has not been used
         if (slot >= packedPayoutNonces.length) {
-            packedPayoutNonces.push(1);
+            // If the slot is greater than the length of the array, we need to push new uint256s to the array
+            // We need to push enough uint256s to the array so that the slot is the last index of the array
+            while (packedPayoutNonces.length != slot) {
+                packedPayoutNonces.push(0);
+            }
         }
 
-        if (flag) {
-            packedPayoutNonces[slot] |= 1 << bitIndex;
-        } else {
-            packedPayoutNonces[slot] &= ~(1 << bitIndex);
-        }
+        // Set the bit to 1
+        // This means that the payout nonce has been used
+        packedPayoutNonces[slot] |= 1 << bitIndex;
     }
 
     /**
@@ -39,14 +50,20 @@ contract PayrollManager is ReentrancyGuardUpgradeable, Storage, Signature {
      * @return Boolean, true for used, false for unused
      */
     function getPayoutNonce(uint256 payoutNonce) internal view returns (bool) {
+        // Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
         uint256 slotIndex = payoutNonce / 256;
+
+        // The bit index of the uint256 is the payout nonce % 256 (0-255)
         uint256 bitIndex = payoutNonce % 256;
+
+        //  If the slot is greater than the length of the array, the payout nonce has not been used
         if (
             packedPayoutNonces.length == 0 ||
-            packedPayoutNonces.length < slotIndex
+            packedPayoutNonces.length <= slotIndex
         ) {
             return false;
         } else {
+            // If the bit is set, the payout nonce has been used, if not, it has not been used
             return (packedPayoutNonces[slotIndex] & (1 << bitIndex)) != 0;
         }
     }
@@ -141,6 +158,19 @@ contract PayrollManager is ReentrancyGuardUpgradeable, Storage, Signature {
             }
         }
 
+        // create a new array to store initial balances of  payment tokens
+        uint256[] memory initialBalances = new uint256[](paymentTokens.length);
+
+        for (uint256 i = 0; i < paymentTokens.length; i++) {
+            if (paymentTokens[i] == address(0)) {
+                initialBalances[i] = address(this).balance;
+            } else {
+                initialBalances[i] = IERC20(paymentTokens[i]).balanceOf(
+                    address(this)
+                );
+            }
+        }
+
         // Loop through the payouts
         for (uint256 i = 0; i < to.length; i++) {
             // Generate the leaf from the payout data
@@ -171,25 +201,40 @@ contract PayrollManager is ReentrancyGuardUpgradeable, Storage, Signature {
             ) {
                 // Transfer the funds to the recipient (to) addresses
                 if (tokenAddress[i] == address(0)) {
+                    packPayoutNonce(payoutNonce[i]);
                     // Transfer ether
-                    payable(to[i]).transfer(amount[i]);
-                    packPayoutNonce(true, payoutNonce[i]);
+                    (bool sent, bytes memory data) = to[i].call{
+                        value: amount[i]
+                    }("");
+
+                    require(sent, "CS007");
                 } else {
+                    packPayoutNonce(payoutNonce[i]);
                     // Transfer ERC20 tokens
-                    IERC20(tokenAddress[i]).transfer(to[i], amount[i]);
-                    packPayoutNonce(true, payoutNonce[i]);
+                    IERC20(tokenAddress[i]).safeTransfer(to[i], amount[i]);
                 }
             }
         }
 
         // Check if the contract has any tokens left
         for (uint256 i = 0; i < paymentTokens.length; i++) {
-            if (IERC20(paymentTokens[i]).balanceOf(address(this)) > 0) {
+            if (paymentTokens[i] == address(0)) {
+                // Revert if the contract has any ether left
+                require(address(this).balance == initialBalances[i], "CS018");
+            } else if (
+                IERC20(paymentTokens[i]).balanceOf(address(this)) !=
+                initialBalances[i]
+            ) {
                 // Revert if the contract has any tokens left
                 revert("CS018");
             }
         }
     }
+
+    /**
+     * @dev Receive Ether
+     */
+    receive() external payable {}
 
     /**
      * @dev Execute transaction from Gnosis Safe

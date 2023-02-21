@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+pragma solidity 0.8.9;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract Signature {
@@ -21,10 +21,14 @@ contract Signature {
         }
     }
 
+    /**
+     * @dev get the domain seperator
+     */
     function getDomainSeperator() internal view returns (bytes32) {
-        return keccak256(
-            abi.encode(EIP712_DOMAIN_TYPEHASH, getChainId(), address(this))
-        );
+        return
+            keccak256(
+                abi.encode(EIP712_DOMAIN_TYPEHASH, getChainId(), address(this))
+            );
     }
 
     /**

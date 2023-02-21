@@ -15,9 +15,8 @@ async function main() {
     const [masterOperator] = await ethers.getSigners();
     const OrganizerFactory = await ethers.getContractFactory("Organizer");
     console.log(masterOperator.address);
-    const Organizer = await OrganizerFactory.deploy();
+    const Organizer = await OrganizerFactory.deploy(ALLOWANCE_MODULE);
     await Organizer.deployed();
-    await Organizer.initialize(ALLOWANCE_MODULE);
     console.log("Organizer deployed to: ", Organizer.address);
 }
 
