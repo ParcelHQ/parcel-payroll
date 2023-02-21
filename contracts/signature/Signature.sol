@@ -24,7 +24,7 @@ contract Signature {
     /**
      * @dev get the domain seperator
      */
-    function getDomainSeperator() internal view returns (bytes32) {
+    function getDomainSeparator() internal view returns (bytes32) {
         return
             keccak256(
                 abi.encode(EIP712_DOMAIN_TYPEHASH, getChainId(), address(this))
@@ -43,7 +43,7 @@ contract Signature {
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
-                getDomainSeperator(),
+                getDomainSeparator(),
                 keccak256(abi.encode(PAYROLL_TX_TYPEHASH, rootHash))
             )
         );

@@ -25,7 +25,7 @@ abstract contract ApproverManager is Storage, Pausable {
     function addApproverWithThreshold(
         address approver,
         uint128 threshold
-    ) public whenNotPaused {
+    ) external whenNotPaused {
         _onlyOnboarded(msg.sender);
 
         // Approver address cannot be null, the sentinel or the Safe itself.
@@ -60,7 +60,7 @@ abstract contract ApproverManager is Storage, Pausable {
         address prevApprover,
         address approver,
         uint128 threshold
-    ) public whenNotPaused {
+    ) external whenNotPaused {
         _onlyOnboarded(msg.sender);
 
         // Only allow to remove an approver, if threshold can still be reached.
@@ -75,7 +75,7 @@ abstract contract ApproverManager is Storage, Pausable {
         orgs[msg.sender].approvers[prevApprover] = orgs[msg.sender].approvers[
             approver
         ];
-        orgs[msg.sender].approvers[approver] = address(0);
+        delete orgs[msg.sender].approvers[approver];
         orgs[msg.sender].approverCount--;
         emit RemovedApprover(approver, msg.sender);
         // Change threshold if threshold was changed.
@@ -93,7 +93,7 @@ abstract contract ApproverManager is Storage, Pausable {
         address prevApprover,
         address oldApprover,
         address newApprover
-    ) public whenNotPaused {
+    ) external whenNotPaused {
         _onlyOnboarded(msg.sender);
 
         // Approver address cannot be null, the sentinel or the Safe itself.
@@ -147,14 +147,14 @@ abstract contract ApproverManager is Storage, Pausable {
      */
     function getApprovers(
         address _safeAddress
-    ) public view returns (address[] memory) {
+    ) external view returns (address[] memory) {
         _onlyOnboarded(_safeAddress);
 
         address[] memory array = new address[](
             orgs[_safeAddress].approverCount
         );
 
-        uint8 i = 0;
+        uint256 i = 0;
         address currentOp = orgs[_safeAddress].approvers[SENTINEL_ADDRESS];
         while (currentOp != SENTINEL_ADDRESS) {
             array[i] = currentOp;

@@ -94,11 +94,11 @@ contract Organizer is ApproverManager, PayrollManager, Ownable {
         _onlyOnboarded(msg.sender);
 
         // Remove all approvers in Orgs
-        address currentapprover = orgs[msg.sender].approvers[SENTINEL_ADDRESS];
-        while (currentapprover != SENTINEL_ADDRESS) {
-            address nextapprover = orgs[msg.sender].approvers[currentapprover];
-            delete orgs[msg.sender].approvers[currentapprover];
-            currentapprover = nextapprover;
+        address currentApprover = orgs[msg.sender].approvers[SENTINEL_ADDRESS];
+        while (currentApprover != SENTINEL_ADDRESS) {
+            address nextApprover = orgs[msg.sender].approvers[currentApprover];
+            delete orgs[msg.sender].approvers[currentApprover];
+            currentApprover = nextApprover;
         }
 
         delete orgs[msg.sender];
@@ -123,7 +123,7 @@ contract Organizer is ApproverManager, PayrollManager, Ownable {
      * @dev Renounce ownership of the contract
      * @notice This function is overridden to prevent renouncing ownership
      */
-    function renounceOwnership() public view override onlyOwner {
+    function renounceOwnership() public pure override {
         revert("Ownable: cannot renounce ownership");
     }
 }
