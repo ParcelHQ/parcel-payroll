@@ -2,8 +2,6 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { default: MerkleTree } = require("merkletreejs");
 const { ALLOWANCE_MODULE } = require("../../utils/constant");
-const GnosisSafe = require("../../utils/GnosisSafe.json");
-const AllowanceModule = require("../../utils/AllowanceModule.json");
 
 describe.skip("Payroll Contract", () => {
     describe("Payroll Execution Process", function () {
