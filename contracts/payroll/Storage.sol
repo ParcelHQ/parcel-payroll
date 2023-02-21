@@ -10,11 +10,16 @@ abstract contract Storage is PausableUpgradeable {
      * @param approverCount Number of approvers in the org
      * @param approvalsRequired Number of approvals required for a single payout
      * @param approvers Linked list of approvers
+     * @param packedPayoutNonces Array of uint256, each uint256 represents 256 payout nonces
+     * Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
+     * The bit index of the uint256 is the payout nonce % 256
+     * If the bit is set, the payout nonce has been used, if not, it has not been used
      */
     struct ORG {
         uint128 approverCount;
         uint128 approvalsRequired;
         mapping(address => address) approvers;
+        uint256[] packedPayoutNonces;
     }
 
     // Address of the Allowance Module
@@ -28,13 +33,4 @@ abstract contract Storage is PausableUpgradeable {
      * Mapping of org's safe address to ORG struct
      */
     mapping(address => ORG) public orgs;
-
-    /**
-     * @dev Storage for packed payout nonces
-     * Array of uint256, each uint256 represents 256 payout nonces
-     * Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
-     * The bit index of the uint256 is the payout nonce % 256
-     * If the bit is set, the payout nonce has been used, if not, it has not been used
-     */
-    uint256[] packedPayoutNonces;
 }
