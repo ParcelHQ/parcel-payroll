@@ -2,10 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "./Storage.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 
 /// @title Approver Manager for Organizer Contract
-abstract contract ApproverManager is Storage, Pausable {
+abstract contract ApproverManager is Storage {
     // Events
     event ApproverAdded(address indexed safeAddress, address indexed operator);
     event ApproverRemoved(

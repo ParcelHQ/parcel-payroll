@@ -2,8 +2,9 @@
 pragma solidity ^0.8.9;
 
 import "./payroll/ApproverManager.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
 import "./payroll/PayrollManager.sol";
 
 /// @title Organizer - A utility smart contract for Orgss to define and manage their Organizational structure.
@@ -12,8 +13,8 @@ import "./payroll/PayrollManager.sol";
 
 contract Organizer is
     Initializable,
+    OwnableUpgradeable,
     ApproverManager,
-    PausableUpgradeable,
     PayrollManager
 {
     //  Events
@@ -32,6 +33,7 @@ contract Organizer is
      * @param _allowanceAddress - Address of the Allowance Module on current Network
      */
     function initialize(address _allowanceAddress) public initializer {
+        __Ownable_init();
         ALLOWANCE_MODULE = _allowanceAddress;
     }
 
@@ -125,4 +127,18 @@ contract Organizer is
     function renounceOwnership() public view override onlyOwner {
         revert("Ownable: cannot renounce ownership");
     }
+
+    // /**
+    //  * @dev Override _msgData from ContextUpgradeable
+    //  */
+    // function _msgData() internal view override(Context, ContextUpgradeable) returns (bytes memory) {
+    //     return Context._msgData();
+    // }
+
+    // /**
+    //  * @dev Override _msgSender from ContextUpgradeable
+    //  */
+    // function _msgSender() internal view override(Context, ContextUpgradeable) returns (address ) {
+    //     return Context._msgSender();
+    // }
 }

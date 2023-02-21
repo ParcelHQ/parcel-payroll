@@ -22,7 +22,7 @@ contract Signature {
     }
 
     function getDomainSeperator() internal view returns (bytes32) {
-        keccak256(
+        return keccak256(
             abi.encode(EIP712_DOMAIN_TYPEHASH, getChainId(), address(this))
         );
     }

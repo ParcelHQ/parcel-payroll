@@ -11,7 +11,7 @@ async function main() {
     // to make sure everything is compiled
     // await run("compile");
     // We get the contract to deploy
-    const addresses = await ethers.getSigners();
+    // const addresses = await ethers.getSigners();
     const Organizer = await ethers.getContractFactory("Organizer");
 
     //   Organizer Contract deployed on Goerli: 0xC4b5862e55595389C99D78CEF5b0B95d147A22e3

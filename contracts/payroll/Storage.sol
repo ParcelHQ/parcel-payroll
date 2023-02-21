@@ -1,9 +1,11 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+
 /// @title Storage for Organizer Contract
 
-abstract contract Storage {
+abstract contract Storage is PausableUpgradeable {
     /**
      * @dev Struct for ORG
      * @param approverCount Number of approvers in the org
