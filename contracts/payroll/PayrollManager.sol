@@ -200,17 +200,17 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
             ) {
                 // Transfer the funds to the recipient (to) addresses
                 if (tokenAddress[i] == address(0)) {
+                    packPayoutNonce(payoutNonce[i]);
                     // Transfer ether
                     (bool sent, bytes memory data) = to[i].call{
                         value: amount[i]
                     }("");
 
                     require(sent, "CS007");
-                    packPayoutNonce(payoutNonce[i]);
                 } else {
+                    packPayoutNonce(payoutNonce[i]);
                     // Transfer ERC20 tokens
                     IERC20(tokenAddress[i]).safeTransfer(to[i], amount[i]);
-                    packPayoutNonce(payoutNonce[i]);
                 }
             }
         }
