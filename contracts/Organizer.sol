@@ -55,7 +55,6 @@ contract Organizer is ApproverManager, PayrollManager, Ownable {
 
         orgs[safeAddress].approverCount = 0;
         orgs[safeAddress].approvalsRequired = approvalsRequired;
-        orgs[safeAddress].packedPayoutNonces = new uint256[](5);
 
         for (uint256 i = 0; i < _approvers.length; i++) {
             address approver = _approvers[i];

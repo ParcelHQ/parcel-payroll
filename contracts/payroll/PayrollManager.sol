@@ -34,11 +34,11 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard, Pausable {
         // The bit index of the uint256 is the payout nonce % 256 (0-255)
         uint256 bitIndex = payoutNonce % 256;
 
-        // If the bit is set, the payout nonce has been used, if not, it has not been used
-        if (slot >= orgs[safeAddress].packedPayoutNonces.length) {
-            // If the slot is greater than the length of the array, we need to push new uint256s to the array
-            // We need to push enough uint256s to the array so that the slot is the last index of the array
-            while (orgs[safeAddress].packedPayoutNonces.length != slot) {
+        // If the slot is greater than the length of the array, we need to add more slots
+        if (orgs[safeAddress].packedPayoutNonces.length <= slot) {
+            // Add the required number of slots
+
+            while (orgs[safeAddress].packedPayoutNonces.length <= slot) {
                 orgs[safeAddress].packedPayoutNonces.push(0);
             }
         }
