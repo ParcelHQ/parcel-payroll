@@ -32,4 +32,15 @@ abstract contract Storage {
      * Mapping of org's safe address to ORG struct
      */
     mapping(address => ORG) public orgs;
+
+    /**
+     * @dev Structure for Payouts
+     */
+    struct Payout {
+        address to;
+        address tokenAddress;
+        uint128 amount;
+        uint64 payoutNonce;
+        bytes32[][] proof;
+    }
 }

@@ -126,11 +126,7 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard, Pausable {
     /**
      * @dev Validate the payroll transaction hashes and execute the payroll
      * @param safeAddress Address of the safe
-     * @param to Addresses to send the funds to
-     * @param tokenAddress Addresses of the tokens to send
-     * @param amount Amounts of tokens to send
-     * @param payoutNonce Payout nonces to use
-     * @param proof Merkle proof of the payroll transaction hashes
+     * @param payouts Array of Payouts
      * @param roots Merkle roots of the payroll transaction hashes
      * @param signatures Signatures of the payroll transaction hashes
      * @param paymentTokens Addresses of all the tokens to send in the payroll
@@ -138,23 +134,19 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard, Pausable {
      */
     function executePayroll(
         address safeAddress,
-        address[] memory to,
-        address[] memory tokenAddress,
-        uint128[] memory amount,
-        uint64[] memory payoutNonce,
-        bytes32[][][] memory proof,
-        bytes32[] memory roots,
-        bytes[] memory signatures,
-        address[] memory paymentTokens,
+        Payout[] calldata payouts,
+        bytes32[] calldata roots,
+        bytes[] calldata signatures,
+        address[] calldata paymentTokens,
         uint96[] memory payoutAmounts
     ) external nonReentrant whenNotPaused {
         // check if safe is onboarded
         require(orgs[safeAddress].approverCount != 0, "CS009");
 
         // Validate the Input Data
-        require(to.length == tokenAddress.length, "CS004");
-        require(to.length == amount.length, "CS004");
-        require(to.length == payoutNonce.length, "CS004");
+        // require(to.length == tokenAddress.length, "CS004");
+        // require(to.length == amount.length, "CS004");
+        // require(to.length == payoutNonce.length, "CS004");
         require(roots.length == signatures.length, "CS004");
         require(paymentTokens.length == payoutAmounts.length, "CS004");
 
@@ -185,13 +177,13 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard, Pausable {
         }
 
         // Loop through the payouts
-        for (uint256 i = 0; i < to.length; i++) {
+        for (uint256 i = 0; i < payouts.length; i++) {
             // Generate the leaf from the payout data
             bytes32 leaf = encodeTransactionData(
-                to[i],
-                tokenAddress[i],
-                amount[i],
-                payoutNonce[i]
+                payouts[i].to,
+                payouts[i].tokenAddress,
+                payouts[i].amount,
+                payouts[i].payoutNonce
             );
 
             // Initialize the approvals counter
@@ -201,7 +193,7 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard, Pausable {
             for (uint256 j = 0; j < roots.length; j++) {
                 // Verify the root has been validated
                 // Verify the proof against the current root and increment the approvals counter
-                if (MerkleProof.verify(proof[i][j], roots[j], leaf)) {
+                if (MerkleProof.verify(payouts[i].proof[j], roots[j], leaf)) {
                     ++approvals;
                 }
             }
@@ -210,21 +202,24 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard, Pausable {
             if (
                 approvals >= orgs[safeAddress].approvalsRequired &&
                 (orgs[safeAddress].packedPayoutNonces.length == 0 ||
-                    !getPayoutNonce(safeAddress, payoutNonce[i]))
+                    !getPayoutNonce(safeAddress, payouts[i].payoutNonce))
             ) {
                 // Transfer the funds to the recipient (to) addresses
-                if (tokenAddress[i] == address(0)) {
-                    packPayoutNonce(safeAddress, payoutNonce[i]);
+                if (payouts[i].tokenAddress == address(0)) {
+                    packPayoutNonce(safeAddress, payouts[i].payoutNonce);
                     // Transfer ether
-                    (bool sent, bytes memory data) = to[i].call{
-                        value: amount[i]
+                    (bool sent, bytes memory data) = payouts[i].to.call{
+                        value: payouts[i].amount
                     }("");
 
                     require(sent, "CS007");
                 } else {
-                    packPayoutNonce(safeAddress, payoutNonce[i]);
+                    packPayoutNonce(safeAddress, payouts[i].payoutNonce);
                     // Transfer ERC20 tokens
-                    IERC20(tokenAddress[i]).safeTransfer(to[i], amount[i]);
+                    IERC20(payouts[i].tokenAddress).safeTransfer(
+                        payouts[i].to,
+                        payouts[i].amount
+                    );
                 }
             }
         }
@@ -235,7 +230,7 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard, Pausable {
                 // Revert if the contract has any ether left
                 require(address(this).balance == initialBalances[i], "CS018");
             } else if (
-                IERC20(paymentTokens[i]).balanceOf(address(this)) !=
+                IERC20(paymentTokens[i]).balanceOf(address(this)) >
                 initialBalances[i]
             ) {
                 // Revert if the contract has any tokens left
