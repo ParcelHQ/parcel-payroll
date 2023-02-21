@@ -36,3 +36,4 @@
 -   `CS015`: `Invalid Threshold Value: 0`
 -   `CS016`: `Threshold cannot exceed approver count`
 -   `CS017`: `Invalid PrevApprover pair provided`
+-   `CS018`: `Organizer: Org already onboarded`
