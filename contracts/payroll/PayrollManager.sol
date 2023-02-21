@@ -57,7 +57,7 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard, Pausable {
     function getPayoutNonce(
         address safeAddress,
         uint256 payoutNonce
-    ) internal view returns (bool) {
+    ) public view returns (bool) {
         // Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
         uint256 slotIndex = payoutNonce / 256;
 
@@ -209,8 +209,7 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard, Pausable {
             // Check if the approvals are greater than or equal to the required approvals
             if (
                 approvals >= orgs[safeAddress].approvalsRequired &&
-                (orgs[safeAddress].packedPayoutNonces.length == 0 ||
-                    !getPayoutNonce(safeAddress, payoutNonce[i]))
+                !getPayoutNonce(safeAddress, payoutNonce[i])
             ) {
                 // Transfer the funds to the recipient (to) addresses
                 if (tokenAddress[i] == address(0)) {
@@ -235,7 +234,7 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard, Pausable {
                 // Revert if the contract has any ether left
                 require(address(this).balance == initialBalances[i], "CS018");
             } else if (
-                IERC20(paymentTokens[i]).balanceOf(address(this)) !=
+                IERC20(paymentTokens[i]).balanceOf(address(this)) >
                 initialBalances[i]
             ) {
                 // Revert if the contract has any tokens left

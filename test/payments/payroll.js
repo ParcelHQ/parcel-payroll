@@ -2,8 +2,10 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { default: MerkleTree } = require("merkletreejs");
 const { ALLOWANCE_MODULE } = require("../../utils/constant");
+const GnosisSafe = require("../../utils/GnosisSafe.json");
+const AllowanceModule = require("../../utils/AllowanceModule.json");
 
-describe.skip("Payroll Contract", () => {
+describe("Payroll Contract", () => {
     describe("Payroll Execution Process", function () {
         let organizer;
         let signers;
@@ -20,14 +22,15 @@ describe.skip("Payroll Contract", () => {
         });
 
         it("deploy", async function () {
-            const [multisig, __, ___, ____, masterOperator] = signers;
+            const [operator1, operator2] = signers;
             const Organizer = await hre.ethers.getContractFactory("Organizer");
-            organizer = await Organizer.deploy(ALLOWANCE_MODULE);
-            await organizer.connect(multisig).deployed();
-            await organizer.initialize(ALLOWANCE_MODULE);
+            organizer = await Organizer.connect(operator2).deploy(
+                ALLOWANCE_MODULE
+            );
+            await organizer.deployed();
         });
 
-        it.skip("encodeTransactionData, Should Generate the correct hash", async function () {
+        it("encodeTransactionData, Should Generate the correct hash", async function () {
             const metadata = {
                 to: "0x2fEB7B7B1747f6be086d50A939eb141A2e90A2d7",
                 tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
@@ -140,8 +143,6 @@ describe.skip("Payroll Contract", () => {
                 sigs
             );
 
-            console.log(onboardTransaciton);
-
             await onboardTransaciton.wait();
 
             const addDelegateTransaction = {
@@ -190,7 +191,6 @@ describe.skip("Payroll Contract", () => {
                 addDelegateSign
             );
 
-            console.log(addDelegate);
             await addDelegate.wait();
 
             const setAllowance = {
@@ -233,10 +233,10 @@ describe.skip("Payroll Contract", () => {
             );
 
             const setAllowanceTx = await safe.execTransaction(
-                addDelegateTransaction.to,
-                addDelegateTransaction.value,
-                addDelegateTransaction.data,
-                addDelegateTransaction.operation,
+                setAllowance.to,
+                setAllowance.value,
+                setAllowance.data,
+                setAllowance.operation,
                 0,
                 0,
                 0,
@@ -245,142 +245,138 @@ describe.skip("Payroll Contract", () => {
                 setAllowanceSign
             );
 
-            console.log(setAllowanceTx);
             await setAllowanceTx.wait();
-            //
-            // const [multisig, operator1, operator2, operator3, masterOperator] =
-            //     signers;
 
-            // await organizer
-            //     .connect("0x4789a8423004192D55dCDD81fCbA47dA47D290aD")
-            //     .onboard(
-            //         [operator1.address, operator2.address, operator3.address],
-            //         threshold
-            //     );
+            // verify is dao is onboarded
 
-            // // verify is dao is onboarded
-            // expect(await organizer.isOrgOnboarded(multisig.address)).to.equal(
-            //     true
-            // );
-            // const payout_1 = {
-            //     to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
-            //     tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
-            //     amount: 100,
-            //     payoutNonce: 20,
-            // };
-            // const payout_2 = {
-            //     to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
-            //     tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
-            //     amount: 100,
-            //     payoutNonce: 21,
-            // };
+            const dao = await organizer.orgs(safe.address);
 
-            // const encodedHash_1 = await organizer
-            //     .connect(operator1)
-            //     .encodeTransactionData(
-            //         payout_1.to,
-            //         payout_1.tokenAddress,
-            //         payout_1.amount,
-            //         payout_1.payoutNonce
-            //     );
-            // console.log(encodedHash_1);
-            // const encodedHash_2 = await organizer
-            //     .connect(operator1)
-            //     .encodeTransactionData(
-            //         payout_2.to,
-            //         payout_2.tokenAddress,
-            //         payout_2.amount,
-            //         payout_2.payoutNonce
-            //     );
+            // verify is dao is onboarded
+            expect(dao.approverCount).to.greaterThan(0);
 
-            // const leaves_1 = [encodedHash_1, encodedHash_2];
+            const payout_1 = {
+                to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
+                tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
+                amount: 100,
+                payoutNonce: 1,
+            };
+            const payout_2 = {
+                to: "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
+                tokenAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
+                amount: 100,
+                payoutNonce: 2,
+            };
 
-            // const leaves_2 = [encodedHash_1, encodedHash_2];
+            const encodedHash_1 = await organizer
+                .connect(operator1)
+                .encodeTransactionData(
+                    payout_1.to,
+                    payout_1.tokenAddress,
+                    payout_1.amount,
+                    payout_1.payoutNonce
+                );
+            console.log(encodedHash_1);
+            const encodedHash_2 = await organizer
+                .connect(operator1)
+                .encodeTransactionData(
+                    payout_2.to,
+                    payout_2.tokenAddress,
+                    payout_2.amount,
+                    payout_2.payoutNonce
+                );
 
-            // const tree_1 = new MerkleTree(leaves_1, ethers.utils.keccak256, {
-            //     sortPairs: true,
-            // });
+            const leaves_1 = [encodedHash_1, encodedHash_2];
 
-            // const tree_2 = new MerkleTree(leaves_2, ethers.utils.keccak256, {
-            //     sortPairs: true,
-            // });
+            const leaves_2 = [encodedHash_1, encodedHash_2];
 
-            // const rootsObject = {};
-            // //  Generating Node Hash
-            // rootsObject[operator1.address] =
-            //     "0x" + tree_1.getRoot().toString("hex");
-            // rootsObject[operator2.address] =
-            //     "0x" + tree_2.getRoot().toString("hex");
+            const tree_1 = new MerkleTree(leaves_1, ethers.utils.keccak256, {
+                sortPairs: true,
+            });
 
-            // // Creating Signatures
-            // const PayrollTx = [{ name: "rootHash", type: "bytes32" }];
+            const tree_2 = new MerkleTree(leaves_2, ethers.utils.keccak256, {
+                sortPairs: true,
+            });
 
-            // let domainData = {
-            //     chainId: 31337,
-            //     verifyingContract: organizer.address,
-            // };
+            const rootsObject = {};
+            //  Generating Node Hash
+            rootsObject[operator1.address] =
+                "0x" + tree_1.getRoot().toString("hex");
+            rootsObject[operator2.address] =
+                "0x" + tree_2.getRoot().toString("hex");
 
-            // const SignatureObject = {};
+            // Creating Signatures
+            const PayrollTx = [{ name: "rootHash", type: "bytes32" }];
 
-            // SignatureObject[operator1.address] = await operator1._signTypedData(
-            //     domainData,
-            //     {
-            //         PayrollTx: PayrollTx,
-            //     },
-            //     { rootHash: rootsObject[operator1.address] }
-            // );
+            let domainData = {
+                chainId: 31337,
+                verifyingContract: organizer.address,
+            };
 
-            // SignatureObject[operator2.address] = await operator2._signTypedData(
-            //     domainData,
-            //     {
-            //         PayrollTx: PayrollTx,
-            //     },
-            //     { rootHash: rootsObject[operator2.address] }
-            // );
+            const SignatureObject = {};
 
-            // const payouts = [payout_1, payout_2];
+            SignatureObject[operator1.address] = await operator1._signTypedData(
+                domainData,
+                {
+                    PayrollTx: PayrollTx,
+                },
+                { rootHash: rootsObject[operator1.address] }
+            );
 
-            // let tos = [];
-            // let tokenAddresses = [];
-            // let amounts = [];
-            // let payoutNonces = [];
-            // let proofs = [];
+            SignatureObject[operator2.address] = await operator2._signTypedData(
+                domainData,
+                {
+                    PayrollTx: PayrollTx,
+                },
+                { rootHash: rootsObject[operator2.address] }
+            );
 
-            // for (let i = 0; i < payouts.length; i++) {
-            //     const encodedHash = await organizer.encodeTransactionData(
-            //         payouts[i].to,
-            //         payouts[i].tokenAddress,
-            //         payouts[i].amount,
-            //         payouts[i].payoutNonce
-            //     );
+            const payouts = [payout_1, payout_2];
 
-            //     const proof_1 = tree_1.getHexProof(encodedHash);
-            //     const proof_2 = tree_2.getHexProof(encodedHash);
+            let tos = [];
+            let tokenAddresses = [];
+            let amounts = [];
+            let payoutNonces = [];
+            let proofs = [];
 
-            //     tos.push(payouts[i].to);
-            //     tokenAddresses.push(payouts[i].tokenAddress);
-            //     amounts.push(payouts[i].amount);
-            //     payoutNonces.push(payouts[i].payoutNonce);
+            for (let i = 0; i < payouts.length; i++) {
+                const encodedHash = await organizer.encodeTransactionData(
+                    payouts[i].to,
+                    payouts[i].tokenAddress,
+                    payouts[i].amount,
+                    payouts[i].payoutNonce
+                );
 
-            //     proofs.push([proof_1, proof_2]);
-            // }
+                const proof_1 = tree_1.getHexProof(encodedHash);
+                const proof_2 = tree_2.getHexProof(encodedHash);
 
-            // console.log(organizer.address, "Address");
+                tos.push(payouts[i].to);
+                tokenAddresses.push(payouts[i].tokenAddress);
+                amounts.push(payouts[i].amount);
+                payoutNonces.push(payouts[i].payoutNonce);
 
-            // const transaction = await organizer.bulkExecution(
-            //     "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
-            //     tos,
-            //     tokenAddresses,
-            //     amounts,
-            //     payoutNonces,
-            //     proofs,
-            //     Object.values(rootsObject),
-            //     Object.values(SignatureObject),
-            //     ["0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C"],
-            //     [1000],
-            //     { gasLimit: 9000000 }
-            // );
-            // console.log(transaction);
+                proofs.push([proof_1, proof_2]);
+            }
+
+            console.log(organizer.address, "Address");
+
+            const execPayroll = await organizer.executePayroll(
+                "0x4789a8423004192D55dCDD81fCbA47dA47D290aD",
+                tos,
+                tokenAddresses,
+                amounts,
+                payoutNonces,
+                proofs,
+                Object.values(rootsObject),
+                Object.values(SignatureObject),
+                ["0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C"],
+                [1000],
+                { gasLimit: 9000000 }
+            );
+
+            const nonce_1 = await organizer.getPayoutNonce(safe.address, 1);
+            const nonce_2 = await organizer.getPayoutNonce(safe.address, 2);
+            expect(nonce_1).to.equals(true);
+            expect(nonce_2).to.equals(true);
         });
     });
 });
