@@ -14,13 +14,11 @@ module.exports = {
     },
 
     networks: {
-        goerli: {
-            url: `https://goerli.infura.io/v3/a610e824d6bc4bef94728de6b76a098f`,
-            accounts: [
-                "ecbc1c5fcb582c701a378ec77295d96198a231cbe01863717c9a38977c35504e",
-                "ea4d0bb4bf3c322a8d761ddee6b7ed91b6d1ba379359d27526bdec51e6f83c65",
-            ],
-            chainId: 5,
+        hardhat: {
+            forking: {
+                url: "https://eth-goerli.g.alchemy.com/v2/MT0pDHBrQ7J8fDTEPdPXcWD-JyAQbH0w",
+            },
+            allowUnlimitedContractSize: true,
         },
     },
 

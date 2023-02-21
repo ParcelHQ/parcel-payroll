@@ -59,5 +59,50 @@ describe("Organizer Contract", () => {
             // verify is dao is offboarded
             expect(dao.approverCount).to.equal(0);
         });
+
+        it("Should Not be Able to Reannounce Ownership", async function () {
+            const [multisig, operator_1, operator_2, operator_3] = signers;
+
+            // onboard a dao
+            expect(
+                organizer.connect(multisig).renounceOwnership()
+            ).to.revertedWith("Ownable: cannot renounce ownership");
+        });
+
+        it("Should be able to pause the Contract", async function () {
+            const [multisig, operator_1, operator_2, operator_3] = signers;
+
+            // onboard a dao
+
+            await organizer.connect(multisig).pause();
+
+            const isPaused = await organizer.paused();
+            expect(isPaused).to.equals(true);
+
+            expect(
+                organizer.connect(operator_1).onboard([operator_1.address], 1)
+            ).to.revertedWith("Pausable: paused");
+        });
+
+        it("Should be able to unpause the Contract", async function () {
+            const [multisig, operator_1, operator_2, operator_3] = signers;
+
+            // onboard a dao
+
+            await organizer.connect(multisig).unpause();
+
+            const isPaused = await organizer.paused();
+            expect(isPaused).to.equals(false);
+        });
+
+        it("Only Owner be able to pause the Contract", async function () {
+            const [multisig, operator_1, operator_2, operator_3] = signers;
+
+            // onboard a dao
+
+            expect(organizer.connect(operator_1).pause()).to.revertedWith(
+                "Ownable: caller is not the owner"
+            );
+        });
     });
 });
