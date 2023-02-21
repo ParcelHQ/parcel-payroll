@@ -4,22 +4,27 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
 // Module Imports
 import "../signature/Signature.sol";
 import "../interfaces/AllowanceModule.sol";
 import "./Storage.sol";
 
-contract PayrollManager is Storage, Signature, ReentrancyGuard {
+contract PayrollManager is Storage, Signature, ReentrancyGuard, Pausable {
     // Payroll Functions
 
     using SafeERC20 for IERC20;
 
     /**
      * @dev Set usage status of a payout nonce
+     * @param safeAddress  Address of the safe
      * @param payoutNonce Payout nonce to set
      */
-    function packPayoutNonce(uint256 payoutNonce) internal {
+    function packPayoutNonce(
+        address safeAddress,
+        uint256 payoutNonce
+    ) internal {
         // Packed payout nonces are stored in an array of uint256
         // Each uint256 represents 256 payout nonces
 
@@ -30,25 +35,29 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
         uint256 bitIndex = payoutNonce % 256;
 
         // If the bit is set, the payout nonce has been used, if not, it has not been used
-        if (slot >= packedPayoutNonces.length) {
+        if (slot >= orgs[safeAddress].packedPayoutNonces.length) {
             // If the slot is greater than the length of the array, we need to push new uint256s to the array
             // We need to push enough uint256s to the array so that the slot is the last index of the array
-            while (packedPayoutNonces.length != slot) {
-                packedPayoutNonces.push(0);
+            while (orgs[safeAddress].packedPayoutNonces.length != slot) {
+                orgs[safeAddress].packedPayoutNonces.push(0);
             }
         }
 
         // Set the bit to 1
         // This means that the payout nonce has been used
-        packedPayoutNonces[slot] |= 1 << bitIndex;
+        orgs[safeAddress].packedPayoutNonces[slot] |= 1 << bitIndex;
     }
 
     /**
      * @dev Get usage status of a payout nonce
+     * @param safeAddress  Address of the safe
      * @param payoutNonce Payout nonce to check
      * @return Boolean, true for used, false for unused
      */
-    function getPayoutNonce(uint256 payoutNonce) internal view returns (bool) {
+    function getPayoutNonce(
+        address safeAddress,
+        uint256 payoutNonce
+    ) internal view returns (bool) {
         // Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
         uint256 slotIndex = payoutNonce / 256;
 
@@ -57,13 +66,15 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
 
         //  If the slot is greater than the length of the array, the payout nonce has not been used
         if (
-            packedPayoutNonces.length == 0 ||
-            packedPayoutNonces.length <= slotIndex
+            orgs[safeAddress].packedPayoutNonces.length == 0 ||
+            orgs[safeAddress].packedPayoutNonces.length <= slotIndex
         ) {
             return false;
         } else {
             // If the bit is set, the payout nonce has been used, if not, it has not been used
-            return (packedPayoutNonces[slotIndex] & (1 << bitIndex)) != 0;
+            return
+                (orgs[safeAddress].packedPayoutNonces[slotIndex] &
+                    (1 << bitIndex)) != 0;
         }
     }
 
@@ -136,7 +147,10 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
         bytes[] memory signatures,
         address[] memory paymentTokens,
         uint96[] memory payoutAmounts
-    ) external nonReentrant {
+    ) external nonReentrant whenNotPaused {
+        // check if safe is onboarded
+        require(orgs[safeAddress].approverCount != 0, "CS009");
+
         // Validate the Input Data
         require(to.length == tokenAddress.length, "CS004");
         require(to.length == amount.length, "CS004");
@@ -195,12 +209,12 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
             // Check if the approvals are greater than or equal to the required approvals
             if (
                 approvals >= orgs[safeAddress].approvalsRequired &&
-                (packedPayoutNonces.length == 0 ||
-                    !getPayoutNonce(payoutNonce[i]))
+                (orgs[safeAddress].packedPayoutNonces.length == 0 ||
+                    !getPayoutNonce(safeAddress, payoutNonce[i]))
             ) {
                 // Transfer the funds to the recipient (to) addresses
                 if (tokenAddress[i] == address(0)) {
-                    packPayoutNonce(payoutNonce[i]);
+                    packPayoutNonce(safeAddress, payoutNonce[i]);
                     // Transfer ether
                     (bool sent, bytes memory data) = to[i].call{
                         value: amount[i]
@@ -208,7 +222,7 @@ contract PayrollManager is Storage, Signature, ReentrancyGuard {
 
                     require(sent, "CS007");
                 } else {
-                    packPayoutNonce(payoutNonce[i]);
+                    packPayoutNonce(safeAddress, payoutNonce[i]);
                     // Transfer ERC20 tokens
                     IERC20(tokenAddress[i]).safeTransfer(to[i], amount[i]);
                 }
