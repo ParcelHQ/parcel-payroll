@@ -27,12 +27,6 @@ contract Organizer is ApproverManager, PayrollManager, Ownable {
      */
     constructor(address _allowanceAddress) Ownable() {
         ALLOWANCE_MODULE = _allowanceAddress;
-
-        // Initialize packedPayoutNonces array with a 500 single 0
-        // This is to avoid the packedPayoutNonces array being empty when the payout is created to reduce gas costs
-        while (packedPayoutNonces.length <= 500) {
-            packedPayoutNonces.push(0);
-        }
     }
 
     /**
@@ -61,6 +55,7 @@ contract Organizer is ApproverManager, PayrollManager, Ownable {
 
         orgs[safeAddress].approverCount = 0;
         orgs[safeAddress].approvalsRequired = approvalsRequired;
+        orgs[safeAddress].packedPayoutNonces = new uint256[](5);
 
         for (uint256 i = 0; i < _approvers.length; i++) {
             address approver = _approvers[i];
