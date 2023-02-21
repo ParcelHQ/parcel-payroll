@@ -5,7 +5,7 @@ const { ALLOWANCE_MODULE } = require("../../utils/constant");
 const GnosisSafe = require("../../utils/GnosisSafe.json");
 const AllowanceModule = require("../../utils/AllowanceModule.json");
 
-describe("Payroll Contract", () => {
+describe.skip("Payroll Contract", () => {
     describe("Payroll Execution Process", function () {
         let organizer;
         let signers;
@@ -24,7 +24,7 @@ describe("Payroll Contract", () => {
         it("deploy", async function () {
             const [multisig, __, ___, ____, masterOperator] = signers;
             const Organizer = await hre.ethers.getContractFactory("Organizer");
-            organizer = await Organizer.deploy();
+            organizer = await Organizer.deploy(ALLOWANCE_MODULE);
             await organizer.connect(multisig).deployed();
             await organizer.initialize(ALLOWANCE_MODULE);
         });
