@@ -43,6 +43,21 @@ contract Organizer is UUPSUpgradeable, PayrollManager, ApproverManager {
     }
 
     /**
+     * @dev Sweep the contract balance
+     * @param tokenAddress - Address of the token to sweep
+     */
+    function sweep(address tokenAddress) external onlyOwner {
+        if (tokenAddress == address(0)) {
+            payable(msg.sender).transfer(address(this).balance);
+        } else {
+            IERC20(tokenAddress).transfer(
+                msg.sender,
+                IERC20(tokenAddress).balanceOf(address(this))
+            );
+        }
+    }
+
+    /**
      * @dev Pause the contract
      */
     function pause() external onlyOwner {
