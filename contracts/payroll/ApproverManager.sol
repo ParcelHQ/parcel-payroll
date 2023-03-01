@@ -1,195 +1,188 @@
-//SPDX-License-Identifier: MIT
-pragma solidity 0.8.9;
+// SPDX-License-Identifier: LGPL-3.0-only
+pragma solidity >=0.7.0 <0.9.0;
+
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "./Storage.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 
-/// @title Approver Manager for Organizer Contract
-abstract contract ApproverManager is Storage, Pausable {
-    // Events
-    event ApproverAdded(address indexed safeAddress, address indexed operator);
-    event ApproverRemoved(
-        address indexed safeAddress,
-        address indexed operator
-    );
+contract ApproverManager is Storage, OwnableUpgradeable {
+    event AddedApprover(address approver);
+    event RemovedApprover(address approver);
+    event ChangedThreshold(uint256 threshold);
 
-    event RemovedApprover(address approver, address safeAddress);
-
-    event ChangedThreshold(uint128 threshold, address safeAddress);
-
-    /// @dev Allows to add a new approver to the Safe and update the threshold at the same time.
-    ///      This can only be done via a Safe transaction.
-    /// @notice Adds the approver `approver` to the Safe and updates the threshold to `threshold`.
-    /// @param approver New approver address.
-    /// @param threshold New threshold.
-    function addApproverWithThreshold(
-        address approver,
-        uint128 threshold
-    ) external whenNotPaused {
-        _onlyOnboarded(msg.sender);
-
-        // Approver address cannot be null, the sentinel or the Safe itself.
-        require(
-            approver != address(0) &&
-                approver != SENTINEL_ADDRESS &&
-                approver != address(this),
-            "CS003"
-        );
-        // No duplicate approvers allowed.
-        require(orgs[msg.sender].approvers[approver] == address(0), "CS002");
-
-        orgs[msg.sender].approvers[approver] = orgs[msg.sender].approvers[
-            SENTINEL_ADDRESS
-        ];
-        orgs[msg.sender].approvers[SENTINEL_ADDRESS] = approver;
-        orgs[msg.sender].approverCount++;
-
-        emit ApproverAdded(msg.sender, approver);
-        // Change threshold if threshold was changed.
-        if (threshold != orgs[msg.sender].approvalsRequired)
-            changeThreshold(threshold);
+    /**
+     * @notice Sets the initial storage of the contract.
+     * @param _approvers List of Org approvers.
+     * @param _threshold Number of required confirmations for a Org transaction.
+     */
+    function setupApprovers(
+        address[] memory _approvers,
+        uint256 _threshold
+    ) internal {
+        // Threshold can only be 0 at initialization.
+        // Check ensures that setup function can only be called once.
+        require(threshold == 0, "GS200");
+        // Validate that threshold is smaller than number of added approvers.
+        require(_threshold <= _approvers.length, "GS201");
+        // There has to be at least one Org approver.
+        require(_threshold >= 1, "GS202");
+        // Initializing Org approvers.
+        address currentApprover = SENTINEL_APPROVER;
+        for (uint256 i = 0; i < _approvers.length; i++) {
+            // Approver address cannot be null.
+            address approver = _approvers[i];
+            require(
+                approver != address(0) &&
+                    approver != SENTINEL_APPROVER &&
+                    approver != address(this) &&
+                    currentApprover != approver,
+                "GS203"
+            );
+            // No duplicate approvers allowed.
+            require(approvers[approver] == address(0), "GS204");
+            approvers[currentApprover] = approver;
+            currentApprover = approver;
+        }
+        approvers[currentApprover] = SENTINEL_APPROVER;
+        approverCount = _approvers.length;
+        threshold = _threshold;
     }
 
-    /// @dev Allows to remove an approver from the Safe and update the threshold at the same time.
-    ///      This can only be done via a Safe transaction.
-    /// @notice Removes the approver `approver` from the Safe and updates the threshold to `threshold`.
-    /// @param prevApprover Approver that pointed to the approver to be removed in the linked list
-    /// @param approver Approver address to be removed.
-    /// @param threshold New threshold.
+    /**
+     * @notice Adds the approver `approver` to the Org and updates the threshold to `_threshold`.
+     * @dev This can only be done via a Org transaction.
+     * @param approver New approver address.
+     * @param _threshold New threshold.
+     */
+    function addApproverWithThreshold(
+        address approver,
+        uint256 _threshold
+    ) public onlyOwner {
+        // Approver address cannot be null, the sentinel or the Org itself.
+        require(
+            approver != address(0) &&
+                approver != SENTINEL_APPROVER &&
+                approver != address(this),
+            "GS203"
+        );
+        // No duplicate approvers allowed.
+        require(approvers[approver] == address(0), "GS204");
+        approvers[approver] = approvers[SENTINEL_APPROVER];
+        approvers[SENTINEL_APPROVER] = approver;
+        approverCount++;
+        emit AddedApprover(approver);
+        // Change threshold if threshold was changed.
+        if (threshold != _threshold) changeThreshold(_threshold);
+    }
+
+    /**
+     * @notice Removes the approver `approver` from the Org and updates the threshold to `_threshold`.
+     * @dev This can only be done via a Org transaction.
+     * @param prevApprover Approver that pointed to the approver to be removed in the linked list
+     * @param approver Approver address to be removed.
+     * @param _threshold New threshold.
+     */
     function removeApprover(
         address prevApprover,
         address approver,
-        uint128 threshold
-    ) external whenNotPaused {
-        _onlyOnboarded(msg.sender);
-
+        uint256 _threshold
+    ) public onlyOwner {
         // Only allow to remove an approver, if threshold can still be reached.
-        require(orgs[msg.sender].approverCount - 1 >= threshold, "CS016");
+        require(approverCount - 1 >= _threshold, "GS201");
         // Validate approver address and check that it corresponds to approver index.
         require(
-            approver != address(0) && approver != SENTINEL_ADDRESS,
-            "CS003"
+            approver != address(0) && approver != SENTINEL_APPROVER,
+            "GS203"
         );
-        require(orgs[msg.sender].approvers[prevApprover] == approver, "CS017");
-
-        orgs[msg.sender].approvers[prevApprover] = orgs[msg.sender].approvers[
-            approver
-        ];
-        delete orgs[msg.sender].approvers[approver];
-        orgs[msg.sender].approverCount--;
-        emit RemovedApprover(approver, msg.sender);
+        require(approvers[prevApprover] == approver, "GS205");
+        approvers[prevApprover] = approvers[approver];
+        approvers[approver] = address(0);
+        approverCount--;
+        emit RemovedApprover(approver);
         // Change threshold if threshold was changed.
-        if (threshold != orgs[msg.sender].approvalsRequired)
-            changeThreshold(threshold);
+        if (threshold != _threshold) changeThreshold(_threshold);
     }
 
-    /// @dev Allows to swap/replace an approver with another address.
-    ///      This can only be done via a Multisig transaction.
-    /// @notice Replaces the approver `oldApprover` in the Safe with `newApprover`.
-    /// @param prevApprover Approver that pointed to the approver to be replaced in the linked list
-    /// @param oldApprover Approver address to be replaced.
-    /// @param newApprover New approver address.
+    /**
+     * @notice Replaces the approver `oldApprover` in the Org with `newApprover`.
+     * @dev This can only be done via a Org transaction.
+     * @param prevApprover Approver that pointed to the approver to be replaced in the linked list
+     * @param oldApprover Approver address to be replaced.
+     * @param newApprover New approver address.
+     */
     function swapApprover(
         address prevApprover,
         address oldApprover,
         address newApprover
-    ) external whenNotPaused {
-        _onlyOnboarded(msg.sender);
-
-        // Approver address cannot be null, the sentinel or the Safe itself.
+    ) public onlyOwner {
+        // Approver address cannot be null, the sentinel or the Org itself.
         require(
             newApprover != address(0) &&
-                newApprover != SENTINEL_ADDRESS &&
+                newApprover != SENTINEL_APPROVER &&
                 newApprover != address(this),
-            "CS003"
+            "GS203"
         );
         // No duplicate approvers allowed.
-        require(orgs[msg.sender].approvers[newApprover] == address(0), "CS002");
-
-        // Validate oldApprovers address and check that it corresponds to approver index.
+        require(approvers[newApprover] == address(0), "GS204");
+        // Validate oldApprover address and check that it corresponds to approver index.
         require(
-            oldApprover != address(0) && oldApprover != SENTINEL_ADDRESS,
-            "CS003"
+            oldApprover != address(0) && oldApprover != SENTINEL_APPROVER,
+            "GS203"
         );
-
-        require(
-            orgs[msg.sender].approvers[prevApprover] == oldApprover,
-            "CS017"
-        );
-        orgs[msg.sender].approvers[newApprover] = orgs[msg.sender].approvers[
-            oldApprover
-        ];
-        orgs[msg.sender].approvers[prevApprover] = newApprover;
-        orgs[msg.sender].approvers[oldApprover] = address(0);
-        emit RemovedApprover(oldApprover, msg.sender);
-        emit ApproverAdded(msg.sender, newApprover);
+        require(approvers[prevApprover] == oldApprover, "GS205");
+        approvers[newApprover] = approvers[oldApprover];
+        approvers[prevApprover] = newApprover;
+        approvers[oldApprover] = address(0);
+        emit RemovedApprover(oldApprover);
+        emit AddedApprover(newApprover);
     }
 
-    /// @dev Allows to update the number of required confirmations by Safe approvers.
-    ///      This can only be done via a Multisig transaction.
-    /// @notice Changes the approvals required to `_threshold`.
-    /// @param threshold New threshold.
-    function changeThreshold(uint128 threshold) public whenNotPaused {
-        _onlyOnboarded(msg.sender);
-
+    /**
+     * @notice Changes the threshold of the Org to `_threshold`.
+     * @dev This can only be done via a Org transaction.
+     * @param _threshold New threshold.
+     */
+    function changeThreshold(uint256 _threshold) public onlyOwner {
         // Validate that threshold is smaller than number of approvers.
-        require(threshold <= orgs[msg.sender].approverCount, "CS016");
-        // There has to be at least one Safe Approver.
-        require(threshold >= 1, "CS015");
-        orgs[msg.sender].approvalsRequired = threshold;
-        emit ChangedThreshold(threshold, msg.sender);
+        require(_threshold <= approverCount, "GS201");
+        // There has to be at least one Org approver.
+        require(_threshold >= 1, "GS202");
+        threshold = _threshold;
+        emit ChangedThreshold(threshold);
     }
 
     /**
-     * @dev Get list of approvers for Org
-     * @param _safeAddress Address of the Org
-     * @return Array of approvers
+     * @notice Returns the number of required confirmations for a Org transaction aka the threshold.
+     * @return Threshold number.
      */
-    function getApprovers(
-        address _safeAddress
-    ) external view returns (address[] memory) {
-        _onlyOnboarded(_safeAddress);
+    function getThreshold() public view returns (uint256) {
+        return threshold;
+    }
 
-        address[] memory array = new address[](
-            orgs[_safeAddress].approverCount
-        );
+    /**
+     * @notice Returns if `approver` is an approver of the Org.
+     * @return Boolean if approver is an approver of the Org.
+     */
+    function isApprover(address approver) public view returns (bool) {
+        return
+            approver != SENTINEL_APPROVER && approvers[approver] != address(0);
+    }
 
-        uint256 i = 0;
-        address currentOp = orgs[_safeAddress].approvers[SENTINEL_ADDRESS];
-        while (currentOp != SENTINEL_ADDRESS) {
-            array[i] = currentOp;
-            currentOp = orgs[_safeAddress].approvers[currentOp];
-            i++;
+    /**
+     * @notice Returns a list of Org approvers.
+     * @return Array of Org approvers.
+     */
+    function getApprovers() public view returns (address[] memory) {
+        address[] memory array = new address[](approverCount);
+
+        // populate return array
+        uint256 index = 0;
+        address currentApprover = approvers[SENTINEL_APPROVER];
+        while (currentApprover != SENTINEL_APPROVER) {
+            array[index] = currentApprover;
+            currentApprover = approvers[currentApprover];
+            index++;
         }
-
         return array;
-    }
-
-    /**
-     * @dev Get count of approvers for Org
-     * @param _safeAddress Address of the Org
-     * @return Count of approvers
-     */
-    function getApproverCount(
-        address _safeAddress
-    ) external view returns (uint256) {
-        _onlyOnboarded(_safeAddress);
-        return orgs[_safeAddress].approverCount;
-    }
-
-    /**
-     * @dev Get required Threshold for Org
-     * @param _safeAddress Address of the Org
-     * @return Threshold Count
-     */
-    function getThreshold(
-        address _safeAddress
-    ) external view returns (uint256) {
-        _onlyOnboarded(_safeAddress);
-        return orgs[_safeAddress].approvalsRequired;
-    }
-
-    function _onlyOnboarded(address _safeAddress) internal view {
-        require(orgs[_safeAddress].approverCount != 0, "CS009");
     }
 }

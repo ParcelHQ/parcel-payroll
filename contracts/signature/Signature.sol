@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.9;
+// SPDX-License-Identifier: LGPL-3.0-only
+pragma solidity >=0.7.0 <0.9.0;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract Signature {
@@ -24,7 +24,7 @@ contract Signature {
     /**
      * @dev get the domain seperator
      */
-    function getDomainSeparator() internal view returns (bytes32) {
+    function getDomainSeperator() internal view returns (bytes32) {
         return
             keccak256(
                 abi.encode(EIP712_DOMAIN_TYPEHASH, getChainId(), address(this))
@@ -43,7 +43,7 @@ contract Signature {
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
-                getDomainSeparator(),
+                getDomainSeperator(),
                 keccak256(abi.encode(PAYROLL_TX_TYPEHASH, rootHash))
             )
         );
