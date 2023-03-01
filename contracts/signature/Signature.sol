@@ -1,14 +1,18 @@
-// SPDX-License-Identifier: LGPL-3.0-only
-pragma solidity >=0.7.0 <0.9.0;
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.7;
 
-contract Signature {
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "../payroll/Storage.sol";
+
+contract Signature is Storage {
     using ECDSA for bytes32;
 
     // Domain Typehash
     bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
         keccak256(
-            bytes("EIP712Domain(uint256 chainId,address verifyingContract)")
+            bytes(
+                "EIP712Domain(string version, uint256 chainId,address verifyingContract)"
+            )
         );
 
     // Message Typehash
@@ -22,12 +26,17 @@ contract Signature {
     }
 
     /**
-     * @dev get the domain seperator
+     * @dev get the domain separator
      */
-    function getDomainSeperator() internal view returns (bytes32) {
+    function getDomainSeparator() internal view returns (bytes32) {
         return
             keccak256(
-                abi.encode(EIP712_DOMAIN_TYPEHASH, getChainId(), address(this))
+                abi.encode(
+                    EIP712_DOMAIN_TYPEHASH,
+                    VERSION,
+                    getChainId(),
+                    address(this)
+                )
             );
     }
 
@@ -43,7 +52,7 @@ contract Signature {
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
-                getDomainSeperator(),
+                getDomainSeparator(),
                 keccak256(abi.encode(PAYROLL_TX_TYPEHASH, rootHash))
             )
         );

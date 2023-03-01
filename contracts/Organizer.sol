@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: LGPL-3.0-only
-pragma solidity >=0.7.0 <0.9.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
@@ -10,10 +10,16 @@ import "./payroll/PayrollManager.sol";
 /// @author Sriram Kasyap Meduri - <sriram@parcel.money>
 /// @author Krishna Kant Sharma - <krishna@parcel.money>
 
-contract Organizer is UUPSUpgradeable, PayrollManager, ApproverManager {
+contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
+    using SafeERC20 for IERC20;
+
     //  Events
     //  Org Onboarded
-    event OrgSetup(address indexed orgAddress, address[] indexed approvers);
+    event OrgSetup(
+        address indexed orgAddress,
+        address[] indexed approvers,
+        uint128 approvalsRequired
+    );
 
     constructor() {
         // Set the threshold to 1, so that the contract can be initialized again and become singleton
@@ -21,36 +27,37 @@ contract Organizer is UUPSUpgradeable, PayrollManager, ApproverManager {
     }
 
     /**
-     * @dev initialize the contract
-     */
-    function initialize() public initializer {
-        __Ownable_init();
-        __Pausable_init();
-        __UUPSUpgradeable_init();
-    }
-
-    /**
      * @dev Onboard an Org with approvers
      * @param _approvers - Array of approver addresses
      * @param approvalsRequired - Number of approvals required for a payout to be executed
      */
-    function onboard(
+    function initialize(
         address[] calldata _approvers,
         uint128 approvalsRequired
-    ) external whenNotPaused {
+    ) public initializer {
+        __Ownable_init();
+        __Pausable_init();
+        __ReentrancyGuard_init();
+        __UUPSUpgradeable_init();
+
         setupApprovers(_approvers, approvalsRequired);
-        emit OrgSetup(msg.sender, _approvers);
+        emit OrgSetup(msg.sender, _approvers, approvalsRequired);
     }
 
     /**
      * @dev Sweep the contract balance
      * @param tokenAddress - Address of the token to sweep
      */
-    function sweep(address tokenAddress) external onlyOwner {
+    function sweep(address tokenAddress) external nonReentrant onlyOwner {
         if (tokenAddress == address(0)) {
-            payable(msg.sender).transfer(address(this).balance);
+            // Transfer ether
+            (bool sent, bytes memory data) = address(msg.sender).call{
+                value: address(this).balance
+            }("");
+
+            require(sent, "CS007");
         } else {
-            IERC20(tokenAddress).transfer(
+            IERC20(tokenAddress).safeTransfer(
                 msg.sender,
                 IERC20(tokenAddress).balanceOf(address(this))
             );

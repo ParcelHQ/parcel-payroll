@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: LGPL-3.0-only
-pragma solidity >=0.7.0 <0.9.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
@@ -16,7 +16,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
      * @param _threshold Number of required confirmations for a Org transaction.
      */
     function setupApprovers(
-        address[] memory _approvers,
+        address[] calldata _approvers,
         uint256 _threshold
     ) internal {
         // Threshold can only be 0 at initialization.
@@ -149,14 +149,6 @@ contract ApproverManager is Storage, OwnableUpgradeable {
         require(_threshold >= 1, "GS202");
         threshold = _threshold;
         emit ChangedThreshold(threshold);
-    }
-
-    /**
-     * @notice Returns the number of required confirmations for a Org transaction aka the threshold.
-     * @return Threshold number.
-     */
-    function getThreshold() public view returns (uint256) {
-        return threshold;
     }
 
     /**
