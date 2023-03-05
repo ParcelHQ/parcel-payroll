@@ -38,7 +38,7 @@ contract ParcelPayrollFactory {
         );
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             logic,
-            msg.sender,
+            tx.origin,
             _data
         );
 

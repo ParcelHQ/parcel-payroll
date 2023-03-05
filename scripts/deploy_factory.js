@@ -7,19 +7,21 @@
 const hre = require("hardhat");
 
 async function main() {
-  const ParcelPayrollFactory = await hre.ethers.getContractFactory(
-    "ParcelPayrollFactory"
-  );
-  const factory = await ParcelPayrollFactory.deploy();
+    const ParcelPayrollFactory = await hre.ethers.getContractFactory(
+        "ParcelPayrollFactory"
+    );
+    const factory = await ParcelPayrollFactory.deploy(
+        "0x296F1a23841b05985e758c9be2F6ED95aAC97523"
+    );
 
-  await factory.deployed();
+    await factory.deployed();
 
-  console.log(`ParcelPayrollFactory is Deployed to ${factory.address}`);
+    console.log(`ParcelPayrollFactory is Deployed to ${factory.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
 main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
+    console.error(error);
+    process.exitCode = 1;
 });

@@ -7,17 +7,17 @@
 const hre = require("hardhat");
 
 async function main() {
-  const Organizer = await hre.ethers.getContractFactory("Organizer");
-  const organizer = await Organizer.deploy();
+    const Organizer = await hre.ethers.getContractFactory("Organizer");
+    const organizer = await Organizer.deploy();
 
-  await organizer.deployed();
+    await organizer.deployed();
 
-  console.log(`ParcelPayrollFactory is Deployed to ${organizer.address}`);
+    console.log(`ParcelPayrollFactory is Deployed to ${organizer.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
 main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
+    console.error(error);
+    process.exitCode = 1;
 });
