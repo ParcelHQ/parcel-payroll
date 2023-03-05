@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.7;
+pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
@@ -16,7 +16,7 @@ contract PayrollManager is
     ReentrancyGuardUpgradeable,
     PausableUpgradeable
 {
-    using SafeERC20 for IERC20;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /**
      * @dev Set usage status of a payout nonce
@@ -59,10 +59,7 @@ contract PayrollManager is
         uint256 bitIndex = payoutNonce % 256;
 
         //  If the slot is greater than the length of the array, the payout nonce has not been used
-        if (
-            packedPayoutNonces.length == 0 ||
-            packedPayoutNonces.length <= slotIndex
-        ) {
+        if (packedPayoutNonces.length <= slotIndex) {
             return false;
         } else {
             // If the bit is set, the payout nonce has been used, if not, it has not been used
@@ -155,9 +152,8 @@ contract PayrollManager is
             if (paymentTokens[i] == address(0)) {
                 initialBalances[i] = address(this).balance;
             } else {
-                initialBalances[i] = IERC20(paymentTokens[i]).balanceOf(
-                    address(this)
-                );
+                initialBalances[i] = IERC20Upgradeable(paymentTokens[i])
+                    .balanceOf(address(this));
             }
         }
 
@@ -188,7 +184,9 @@ contract PayrollManager is
             for (uint256 j = 0; j < roots.length; j++) {
                 // Verify the root has been validated
                 // Verify the proof against the current root and increment the approvals counter
-                if (MerkleProof.verify(proof[i][j], roots[j], leaf)) {
+                if (
+                    MerkleProofUpgradeable.verify(proof[i][j], roots[j], leaf)
+                ) {
                     ++approvals;
                 }
             }
@@ -207,7 +205,10 @@ contract PayrollManager is
                 } else {
                     packPayoutNonce(payoutNonce[i]);
                     // Transfer ERC20 tokens
-                    IERC20(tokenAddress[i]).safeTransfer(to[i], amount[i]);
+                    IERC20Upgradeable(tokenAddress[i]).safeTransfer(
+                        to[i],
+                        amount[i]
+                    );
                 }
             }
         }
@@ -218,7 +219,7 @@ contract PayrollManager is
                 // Revert if the contract has any ether left
                 require(address(this).balance == initialBalances[i], "CS018");
             } else if (
-                IERC20(paymentTokens[i]).balanceOf(address(this)) >
+                IERC20Upgradeable(paymentTokens[i]).balanceOf(address(this)) >
                 initialBalances[i]
             ) {
                 // Revert if the contract has any tokens left

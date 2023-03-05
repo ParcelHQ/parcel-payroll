@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.7;
+pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
@@ -17,15 +17,15 @@ contract ApproverManager is Storage, OwnableUpgradeable {
      */
     function setupApprovers(
         address[] calldata _approvers,
-        uint256 _threshold
+        uint128 _threshold
     ) internal {
         // Threshold can only be 0 at initialization.
         // Check ensures that setup function can only be called once.
-        require(threshold == 0, "GS200");
+        require(threshold == 0, "CS015");
         // Validate that threshold is smaller than number of added approvers.
-        require(_threshold <= _approvers.length, "GS201");
+        require(_threshold <= _approvers.length, "CS016");
         // There has to be at least one Org approver.
-        require(_threshold >= 1, "GS202");
+        require(_threshold >= 1, "CS015");
         // Initializing Org approvers.
         address currentApprover = SENTINEL_APPROVER;
         for (uint256 i = 0; i < _approvers.length; i++) {
@@ -36,15 +36,15 @@ contract ApproverManager is Storage, OwnableUpgradeable {
                     approver != SENTINEL_APPROVER &&
                     approver != address(this) &&
                     currentApprover != approver,
-                "GS203"
+                "CS003"
             );
             // No duplicate approvers allowed.
-            require(approvers[approver] == address(0), "GS204");
+            require(approvers[approver] == address(0), "CS002");
             approvers[currentApprover] = approver;
             currentApprover = approver;
         }
         approvers[currentApprover] = SENTINEL_APPROVER;
-        approverCount = _approvers.length;
+        approverCount = uint128(_approvers.length);
         threshold = _threshold;
     }
 
@@ -56,17 +56,17 @@ contract ApproverManager is Storage, OwnableUpgradeable {
      */
     function addApproverWithThreshold(
         address approver,
-        uint256 _threshold
+        uint128 _threshold
     ) public onlyOwner {
         // Approver address cannot be null, the sentinel or the Org itself.
         require(
             approver != address(0) &&
                 approver != SENTINEL_APPROVER &&
                 approver != address(this),
-            "GS203"
+            "CS001"
         );
         // No duplicate approvers allowed.
-        require(approvers[approver] == address(0), "GS204");
+        require(approvers[approver] == address(0), "CS001");
         approvers[approver] = approvers[SENTINEL_APPROVER];
         approvers[SENTINEL_APPROVER] = approver;
         approverCount++;
@@ -85,16 +85,16 @@ contract ApproverManager is Storage, OwnableUpgradeable {
     function removeApprover(
         address prevApprover,
         address approver,
-        uint256 _threshold
+        uint128 _threshold
     ) public onlyOwner {
         // Only allow to remove an approver, if threshold can still be reached.
         require(approverCount - 1 >= _threshold, "GS201");
         // Validate approver address and check that it corresponds to approver index.
         require(
             approver != address(0) && approver != SENTINEL_APPROVER,
-            "GS203"
+            "CS001"
         );
-        require(approvers[prevApprover] == approver, "GS205");
+        require(approvers[prevApprover] == approver, "CS001");
         approvers[prevApprover] = approvers[approver];
         approvers[approver] = address(0);
         approverCount--;
@@ -120,16 +120,16 @@ contract ApproverManager is Storage, OwnableUpgradeable {
             newApprover != address(0) &&
                 newApprover != SENTINEL_APPROVER &&
                 newApprover != address(this),
-            "GS203"
+            "CS001"
         );
         // No duplicate approvers allowed.
-        require(approvers[newApprover] == address(0), "GS204");
+        require(approvers[newApprover] == address(0), "CS001");
         // Validate oldApprover address and check that it corresponds to approver index.
         require(
             oldApprover != address(0) && oldApprover != SENTINEL_APPROVER,
-            "GS203"
+            "CS001"
         );
-        require(approvers[prevApprover] == oldApprover, "GS205");
+        require(approvers[prevApprover] == oldApprover, "CS001");
         approvers[newApprover] = approvers[oldApprover];
         approvers[prevApprover] = newApprover;
         approvers[oldApprover] = address(0);
@@ -142,11 +142,11 @@ contract ApproverManager is Storage, OwnableUpgradeable {
      * @dev This can only be done via a Org transaction.
      * @param _threshold New threshold.
      */
-    function changeThreshold(uint256 _threshold) public onlyOwner {
+    function changeThreshold(uint128 _threshold) public onlyOwner {
         // Validate that threshold is smaller than number of approvers.
-        require(_threshold <= approverCount, "GS201");
+        require(_threshold <= approverCount, "CS016");
         // There has to be at least one Org approver.
-        require(_threshold >= 1, "GS202");
+        require(threshold != 0, "CS015");
         threshold = _threshold;
         emit ChangedThreshold(threshold);
     }

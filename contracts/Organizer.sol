@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.7;
+pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
@@ -11,10 +11,10 @@ import "./payroll/PayrollManager.sol";
 /// @author Krishna Kant Sharma - <krishna@parcel.money>
 
 contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
-    using SafeERC20 for IERC20;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     //  Events
-    //  Org Onboarded
+    //  OrgSetup
     event OrgSetup(
         address indexed orgAddress,
         address[] indexed approvers,
@@ -34,7 +34,7 @@ contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
     function initialize(
         address[] calldata _approvers,
         uint128 approvalsRequired
-    ) public initializer {
+    ) external initializer {
         __Ownable_init();
         __Pausable_init();
         __ReentrancyGuard_init();
@@ -57,9 +57,9 @@ contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
 
             require(sent, "CS007");
         } else {
-            IERC20(tokenAddress).safeTransfer(
+            IERC20Upgradeable(tokenAddress).safeTransfer(
                 msg.sender,
-                IERC20(tokenAddress).balanceOf(address(this))
+                IERC20Upgradeable(tokenAddress).balanceOf(address(this))
             );
         }
     }

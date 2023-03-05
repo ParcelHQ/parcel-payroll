@@ -4,7 +4,7 @@
 
 -   `CS000`: `Approvers Are Mandatory`
 -   `CS001`: `Approver Address Can not be null`
--   `CS002`: `Duplicate Address for Approver`
+-   `CS001`: `Duplicate Address for Approver`
 
 ### Utils Errors
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.7;
+pragma solidity ^0.8.17;
 
-contract Storage {
+abstract contract Storage {
     string public constant VERSION = "0.0.1";
     address internal constant SENTINEL_APPROVER = address(0x1);
     address constant ALLOWANCE_MODULE =
@@ -11,10 +11,10 @@ contract Storage {
     mapping(address => address) internal approvers;
 
     // approverCount Number of approvers in the org
-    uint256 internal approverCount;
+    uint128 internal approverCount;
 
     // theshold Number of approvals required for a single payout
-    uint256 public threshold;
+    uint128 public threshold;
 
     /**
      Array of uint256, each uint256 represents 256 payout nonces
@@ -23,4 +23,7 @@ contract Storage {
      * If the bit is set, the payout nonce has been used, if not, it has not been used
     **/
     uint256[] packedPayoutNonces;
+
+    // Storage Gaps to prevent upgrade errors
+    uint256[48] __gap;
 }

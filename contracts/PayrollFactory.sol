@@ -1,11 +1,18 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.7;
+pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
+interface Organizer {
+    function initialize(
+        address[] calldata _approvers,
+        uint128 approvalsRequired
+    ) external;
+}
+
 contract ParcelPayrollFactory {
-    address public admin;
-    address public logic;
+    address public immutable admin;
+    address public immutable logic;
 
     mapping(address => address) public getParcelAddress;
 
@@ -21,7 +28,14 @@ contract ParcelPayrollFactory {
         admin = msg.sender;
     }
 
-    function onboard(bytes memory _data) public returns (address) {
+    function onboard(
+        address[] calldata _approvers,
+        uint128 approvalsRequired
+    ) public returns (address) {
+        bytes memory _data = abi.encodeCall(
+            Organizer.initialize,
+            (_approvers, approvalsRequired)
+        );
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             logic,
             msg.sender,
