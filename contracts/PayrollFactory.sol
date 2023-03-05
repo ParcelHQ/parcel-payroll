@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-interface Organizer {
+interface OrganizerInterface {
     function initialize(
         address[] calldata _approvers,
         uint128 approvalsRequired
@@ -33,7 +33,7 @@ contract ParcelPayrollFactory {
         uint128 approvalsRequired
     ) public returns (address) {
         bytes memory _data = abi.encodeCall(
-            Organizer.initialize,
+            OrganizerInterface.initialize,
             (_approvers, approvalsRequired)
         );
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
