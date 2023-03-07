@@ -82,7 +82,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
      * @param approver Approver address to be removed.
      * @param _threshold New threshold.
      */
-    function removeApprover(
+    function removeApproverWithThreshold(
         address prevApprover,
         address approver,
         uint128 _threshold
