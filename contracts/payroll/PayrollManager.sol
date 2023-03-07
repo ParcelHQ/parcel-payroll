@@ -7,7 +7,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
-import "../interfaces/AllowanceModule.sol";
+import "../interfaces/IAllowanceModule.sol";
 import "../signature/Signature.sol";
 
 contract PayrollManager is
@@ -243,7 +243,7 @@ contract PayrollManager is
         uint96 amount
     ) internal {
         // Execute payout via allowance module
-        AllowanceModule(ALLOWANCE_MODULE).executeAllowanceTransfer(
+        IAllowanceModule(ALLOWANCE_MODULE).executeAllowanceTransfer(
             owner(),
             tokenAddress,
             payable(address(this)),
