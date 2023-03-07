@@ -96,7 +96,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
         );
         require(approvers[prevApprover] == approver, "CS001");
         approvers[prevApprover] = approvers[approver];
-        approvers[approver] = address(0);
+        delete approvers[approver]
         approverCount--;
         emit RemovedApprover(approver);
         // Change threshold if threshold was changed.
@@ -132,7 +132,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
         require(approvers[prevApprover] == oldApprover, "CS001");
         approvers[newApprover] = approvers[oldApprover];
         approvers[prevApprover] = newApprover;
-        approvers[oldApprover] = address(0);
+        delete approvers[oldApprover]
         emit RemovedApprover(oldApprover);
         emit AddedApprover(newApprover);
     }
