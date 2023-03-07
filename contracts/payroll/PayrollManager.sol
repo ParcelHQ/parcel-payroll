@@ -248,7 +248,7 @@ contract PayrollManager is
             tokenAddress,
             payable(address(this)),
             amount,
-            0x0000000000000000000000000000000000000000,
+            address(0),
             0,
             address(this),
             bytes("")
