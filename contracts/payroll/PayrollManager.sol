@@ -229,7 +229,7 @@ contract PayrollManager is
     }
 
     /**
-     * @dev Receive Ether
+     * @dev Receive Native tokens
      */
     receive() external payable {}
 

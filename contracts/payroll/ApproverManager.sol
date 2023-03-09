@@ -105,7 +105,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
     }
 
     /**
-     * @notice Replaces the approver `oldApprover` in the Org with `newApprover`.
+     * @notice Replaces the approver `oldApprover` with `newApprover` in the Org.
      * @dev This can only be done via a Org transaction.
      * @param prevApprover Approver that pointed to the approver to be replaced in the linked list
      * @param oldApprover Approver address to be replaced.
@@ -145,7 +145,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
      * @param _threshold New threshold.
      */
     function changeThreshold(uint128 _threshold) public onlyOwner {
-        // Validate that threshold is smaller than number of approvers.
+        // Validate that threshold is less than or equal to the number of approvers.
         require(_threshold <= approverCount, "CS016");
         // There has to be at least one Org approver.
         require(threshold != 0, "CS015");
