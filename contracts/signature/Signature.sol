@@ -15,7 +15,7 @@ contract Signature is Storage {
             )
         );
 
-    // Message Typehash
+    // Payroll Transaction Typehash
     bytes32 internal constant PAYROLL_TX_TYPEHASH =
         keccak256(bytes("PayrollTx(bytes32 rootHash)"));
 
@@ -27,6 +27,7 @@ contract Signature is Storage {
 
     /**
      * @dev get the domain separator
+     * @return bytes32 domain separator
      */
     function getDomainSeparator() internal view returns (bytes32) {
         return
@@ -44,6 +45,7 @@ contract Signature is Storage {
      * @dev validate the signature of the payroll transaction
      * @param rootHash hash = encodeTransactionData(recipient, tokenAddress, amount, nonce)
      * @param signature signature
+     * @return address of the signer
      */
     function validatePayrollTxHashes(
         bytes32 rootHash,

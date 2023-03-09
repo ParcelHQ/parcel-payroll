@@ -34,6 +34,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
             require(
                 approver != address(0) &&
                     approver != SENTINEL_APPROVER &&
+                    approver != owner() &&
                     approver != address(this) &&
                     currentApprover != approver,
                 "CS003"
@@ -82,7 +83,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
      * @param approver Approver address to be removed.
      * @param _threshold New threshold.
      */
-    function removeApprover(
+    function removeApproverWithThreshold(
         address prevApprover,
         address approver,
         uint128 _threshold
@@ -91,12 +92,14 @@ contract ApproverManager is Storage, OwnableUpgradeable {
         require(approverCount - 1 >= _threshold, "GS201");
         // Validate approver address and check that it corresponds to approver index.
         require(
-            approver != address(0) && approver != SENTINEL_APPROVER,
+            approver != address(0) &&
+                approver != SENTINEL_APPROVER &&
+                approver != owner(),
             "CS001"
         );
         require(approvers[prevApprover] == approver, "CS001");
         approvers[prevApprover] = approvers[approver];
-        approvers[approver] = address(0);
+        delete approvers[approver];
         approverCount--;
         emit RemovedApprover(approver);
         // Change threshold if threshold was changed.
@@ -104,7 +107,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
     }
 
     /**
-     * @notice Replaces the approver `oldApprover` in the Org with `newApprover`.
+     * @notice Replaces the approver `oldApprover` with `newApprover` in the Org.
      * @dev This can only be done via a Org transaction.
      * @param prevApprover Approver that pointed to the approver to be replaced in the linked list
      * @param oldApprover Approver address to be replaced.
@@ -119,6 +122,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
         require(
             newApprover != address(0) &&
                 newApprover != SENTINEL_APPROVER &&
+                newApprover != owner() &&
                 newApprover != address(this),
             "CS001"
         );
@@ -132,7 +136,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
         require(approvers[prevApprover] == oldApprover, "CS001");
         approvers[newApprover] = approvers[oldApprover];
         approvers[prevApprover] = newApprover;
-        approvers[oldApprover] = address(0);
+        delete approvers[oldApprover];
         emit RemovedApprover(oldApprover);
         emit AddedApprover(newApprover);
     }
@@ -143,7 +147,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
      * @param _threshold New threshold.
      */
     function changeThreshold(uint128 _threshold) public onlyOwner {
-        // Validate that threshold is smaller than number of approvers.
+        // Validate that threshold is less than or equal to the number of approvers.
         require(_threshold <= approverCount, "CS016");
         // There has to be at least one Org approver.
         require(threshold != 0, "CS015");

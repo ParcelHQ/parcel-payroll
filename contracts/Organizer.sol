@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "./payroll/ApproverManager.sol";
 import "./payroll/PayrollManager.sol";
 
-/// @title Organizer - A utility smart contract for Orgss to define and manage their Organizational structure.
+/// @title Organizer - A utility smart contract for Orgs to define and manage their Organizational structure.
 /// @author Sriram Kasyap Meduri - <sriram@parcel.money>
 /// @author Krishna Kant Sharma - <krishna@parcel.money>
 
@@ -14,7 +14,6 @@ contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     //  Events
-    //  OrgSetup
     event OrgSetup(
         address indexed orgAddress,
         address[] indexed approvers,
