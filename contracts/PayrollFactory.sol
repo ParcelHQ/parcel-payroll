@@ -31,27 +31,68 @@ contract ParcelPayrollFactory is Ownable2Step {
         admin = msg.sender;
     }
 
-    function onboard(
+    function computeAddress(
+        bytes32 salt,
         address[] calldata _approvers,
-        uint128 approvalsRequired
-    ) public returns (address) {
+        uint128 approvalsRequired,
+        address safeAddress
+    ) public view returns (address) {
+        bytes memory _data = abi.encodeCall(
+            OrganizerInterface.initialize,
+            (_approvers, approvalsRequired)
+        );
+
+        address predictedAddress = address(
+            uint160(
+                uint(
+                    keccak256(
+                        abi.encodePacked(
+                            bytes1(0xff),
+                            address(this),
+                            salt,
+                            keccak256(
+                                abi.encodePacked(
+                                    type(TransparentUpgradeableProxy)
+                                        .creationCode,
+                                    abi.encode(logic, safeAddress, _data)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        );
+        return predictedAddress;
+    }
+
+    function onboard(
+        bytes32 salt,
+        address[] calldata _approvers,
+        uint128 approvalsRequired,
+        address safeAddress
+    ) public {
         require(getParcelAddress[msg.sender] == address(0), "CS020");
+        require(msg.sender == safeAddress, "Multisig Only");
 
         bytes memory _data = abi.encodeCall(
             OrganizerInterface.initialize,
             (_approvers, approvalsRequired)
         );
 
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            logic,
-            msg.sender,
-            _data
+        address predictedAddress = computeAddress(
+            salt,
+            _approvers,
+            approvalsRequired,
+            safeAddress
         );
 
-        OrganizerInterface(address(proxy)).transferOwnership(msg.sender);
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy{
+            salt: salt
+        }(logic, safeAddress, _data);
 
-        getParcelAddress[msg.sender] = address(proxy);
-        emit OrgOnboarded(msg.sender, address(proxy), logic, _data);
-        return address(proxy);
+        require(address(proxy) == predictedAddress);
+
+        getParcelAddress[safeAddress] = address(proxy);
+        emit OrgOnboarded(safeAddress, address(proxy), predictedAddress, _data);
     }
 }
