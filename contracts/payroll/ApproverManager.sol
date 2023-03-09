@@ -92,12 +92,14 @@ contract ApproverManager is Storage, OwnableUpgradeable {
         require(approverCount - 1 >= _threshold, "GS201");
         // Validate approver address and check that it corresponds to approver index.
         require(
-            approver != address(0) && approver != SENTINEL_APPROVER && approver != owner(),
+            approver != address(0) &&
+                approver != SENTINEL_APPROVER &&
+                approver != owner(),
             "CS001"
         );
         require(approvers[prevApprover] == approver, "CS001");
         approvers[prevApprover] = approvers[approver];
-        delete approvers[approver]
+        delete approvers[approver];
         approverCount--;
         emit RemovedApprover(approver);
         // Change threshold if threshold was changed.
@@ -134,7 +136,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
         require(approvers[prevApprover] == oldApprover, "CS001");
         approvers[newApprover] = approvers[oldApprover];
         approvers[prevApprover] = newApprover;
-        delete approvers[oldApprover]
+        delete approvers[oldApprover];
         emit RemovedApprover(oldApprover);
         emit AddedApprover(newApprover);
     }
