@@ -20,10 +20,9 @@ contract ParcelPayrollFactory is Ownable2Step {
     mapping(address => address) public getParcelAddress;
 
     event OrgOnboarded(
-        address safeAddress,
+        address indexed safeAddress,
         address indexed proxy,
-        address indexed implementation,
-        bytes initData
+        address indexed implementation
     );
 
     constructor(address _logic) Ownable2Step() {
@@ -32,6 +31,7 @@ contract ParcelPayrollFactory is Ownable2Step {
     }
 
     function onboard(
+        bytes32 salt,
         address[] calldata _approvers,
         uint128 approvalsRequired
     ) public returns (address) {
@@ -42,16 +42,48 @@ contract ParcelPayrollFactory is Ownable2Step {
             (_approvers, approvalsRequired)
         );
 
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            logic,
-            msg.sender,
-            _data
-        );
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy{
+            salt: salt
+        }(logic, msg.sender, _data);
 
         OrganizerInterface(address(proxy)).transferOwnership(msg.sender);
 
         getParcelAddress[msg.sender] = address(proxy);
-        emit OrgOnboarded(msg.sender, address(proxy), logic, _data);
+        emit OrgOnboarded(msg.sender, address(proxy), logic);
         return address(proxy);
+    }
+
+    function computeAddress(
+        bytes32 salt,
+        address[] calldata _approvers,
+        uint128 approvalsRequired
+    ) public view returns (address) {
+        bytes memory _data = abi.encodeCall(
+            OrganizerInterface.initialize,
+            (_approvers, approvalsRequired)
+        );
+
+        address predictedAddress = address(
+            uint160(
+                uint(
+                    keccak256(
+                        abi.encodePacked(
+                            bytes1(0xff),
+                            address(this),
+                            salt,
+                            keccak256(
+                                abi.encodePacked(
+                                    type(TransparentUpgradeableProxy)
+                                        .creationCode,
+                                    abi.encode(logic, msg.sender, _data)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        );
+
+        return predictedAddress;
     }
 }

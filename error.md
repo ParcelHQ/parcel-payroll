@@ -5,6 +5,7 @@
 -   `CS000`: `Approvers Are Mandatory`
 -   `CS001`: `Approver Address Can not be null`
 -   `CS001`: `Duplicate Address for Approver`
+-   `CS020`: `Proxy Already Initialized`
 
 ### Utils Errors
 
