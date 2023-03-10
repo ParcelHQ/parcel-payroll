@@ -90,6 +90,8 @@ contract ParcelPayrollFactory is Ownable2Step {
             salt: salt
         }(logic, safeAddress, _data);
 
+        OrganizerInterface(address(proxy)).transferOwnership(safeAddress);
+
         require(address(proxy) == predictedAddress);
 
         getParcelAddress[safeAddress] = address(proxy);
