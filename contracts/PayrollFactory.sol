@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import "./ParcelTransparentProxy.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 interface OrganizerInterface {
@@ -16,6 +16,7 @@ interface OrganizerInterface {
 contract ParcelPayrollFactory is Ownable2Step {
     address public immutable admin;
     address public immutable logic;
+    address public immutable addressRegistery;
 
     mapping(address => address) public getParcelAddress;
 
@@ -26,9 +27,10 @@ contract ParcelPayrollFactory is Ownable2Step {
         bytes initData
     );
 
-    constructor(address _logic) Ownable2Step() {
+    constructor(address _logic, address _addressRegistery) Ownable2Step() {
         logic = _logic;
         admin = msg.sender;
+        addressRegistery = _addressRegistery;
     }
 
     function computeAddress(
@@ -52,9 +54,13 @@ contract ParcelPayrollFactory is Ownable2Step {
                             salt,
                             keccak256(
                                 abi.encodePacked(
-                                    type(TransparentUpgradeableProxy)
-                                        .creationCode,
-                                    abi.encode(logic, safeAddress, _data)
+                                    type(ParcelTransparentProxy).creationCode,
+                                    abi.encode(
+                                        logic,
+                                        safeAddress,
+                                        _data,
+                                        addressRegistery
+                                    )
                                 )
                             )
                         )
@@ -86,9 +92,12 @@ contract ParcelPayrollFactory is Ownable2Step {
             safeAddress
         );
 
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy{
-            salt: salt
-        }(logic, safeAddress, _data);
+        ParcelTransparentProxy proxy = new ParcelTransparentProxy{salt: salt}(
+            logic,
+            safeAddress,
+            _data,
+            addressRegistery
+        );
 
         OrganizerInterface(address(proxy)).transferOwnership(safeAddress);
 
