@@ -2,7 +2,6 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 interface OrganizerInterface {
     function initialize(
@@ -13,8 +12,7 @@ interface OrganizerInterface {
     function transferOwnership(address newOwner) external;
 }
 
-contract ParcelPayrollFactory is Ownable2Step {
-    address public immutable admin;
+contract ParcelPayrollFactory {
     address public immutable logic;
 
     mapping(address => address) public getParcelAddress;
@@ -26,9 +24,8 @@ contract ParcelPayrollFactory is Ownable2Step {
         bytes initData
     );
 
-    constructor(address _logic) Ownable2Step() {
+    constructor(address _logic) {
         logic = _logic;
-        admin = msg.sender;
     }
 
     function computeAddress(
