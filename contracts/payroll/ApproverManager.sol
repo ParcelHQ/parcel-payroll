@@ -63,7 +63,8 @@ contract ApproverManager is Storage, OwnableUpgradeable {
         require(
             approver != address(0) &&
                 approver != SENTINEL_APPROVER &&
-                approver != address(this),
+                approver != address(this) &&
+                approver != owner(),
             "CS001"
         );
         // No duplicate approvers allowed.
@@ -92,9 +93,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
         require(approverCount - 1 >= _threshold, "GS201");
         // Validate approver address and check that it corresponds to approver index.
         require(
-            approver != address(0) &&
-                approver != SENTINEL_APPROVER &&
-                approver != owner(),
+            approver != address(0) && approver != SENTINEL_APPROVER,
             "CS001"
         );
         require(approvers[prevApprover] == approver, "CS001");
