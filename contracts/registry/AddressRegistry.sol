@@ -14,7 +14,10 @@ contract AddressRegistry is Ownable2Step {
 
     constructor() Ownable2Step() {}
 
-    function addNewImplementation(address _implementation) external onlyOwner {
+    function setImplementationWhitelist(
+        address _implementation,
+        bool isActive
+    ) external onlyOwner {
         require(
             _implementation != address(0) &&
                 _implementation != address(this) &&
@@ -22,18 +25,7 @@ contract AddressRegistry is Ownable2Step {
             "CS001"
         );
 
-        parcelWhitelistedImplementation[_implementation] = true;
-    }
-
-    function removeImplementation(address _implementation) external onlyOwner {
-        require(
-            _implementation != address(0) &&
-                _implementation != address(this) &&
-                _implementation != owner(),
-            "CS001"
-        );
-
-        parcelWhitelistedImplementation[_implementation] = false;
+        parcelWhitelistedImplementation[_implementation] = isActive;
     }
 
     function isWhitelisted(address _implementation) public view returns (bool) {
