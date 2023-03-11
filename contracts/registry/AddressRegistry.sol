@@ -24,7 +24,7 @@ contract AddressRegistry is Ownable2Step {
                 _implementation != owner(),
             "CS001"
         );
-        // No duplicate approvers allowed.
+        // No duplicate implementation allowed.
         require(
             parcelWhitelistedImplementation[_implementation] == address(0),
             "CS001"

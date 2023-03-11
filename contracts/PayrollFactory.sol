@@ -3,7 +3,6 @@ pragma solidity ^0.8.17;
 
 import "./ParcelTransparentProxy.sol";
 
-
 interface OrganizerInterface {
     function initialize(
         address[] calldata _approvers,
@@ -15,7 +14,7 @@ interface OrganizerInterface {
 
 contract ParcelPayrollFactory {
     address public immutable logic;
-    address public immutable addressRegistery;
+    address public immutable addressRegistry;
 
     mapping(address => address) public getParcelAddress;
 
@@ -26,9 +25,9 @@ contract ParcelPayrollFactory {
         bytes initData
     );
 
-    constructor(address _logic, address _addressRegistery) {
+    constructor(address _logic, address _addressRegistry) {
         logic = _logic;
-        addressRegistery = _addressRegistery;
+        addressRegistry = _addressRegistry;
     }
 
     function computeAddress(
@@ -57,7 +56,7 @@ contract ParcelPayrollFactory {
                                         logic,
                                         safeAddress,
                                         _data,
-                                        addressRegistery
+                                        addressRegistry
                                     )
                                 )
                             )
@@ -94,7 +93,7 @@ contract ParcelPayrollFactory {
             logic,
             safeAddress,
             _data,
-            addressRegistery
+            addressRegistry
         );
 
         OrganizerInterface(address(proxy)).transferOwnership(safeAddress);
