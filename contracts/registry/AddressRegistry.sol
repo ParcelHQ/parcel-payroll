@@ -25,6 +25,17 @@ contract AddressRegistry is Ownable2Step {
         parcelWhitelistedImplementation[_implementation] = true;
     }
 
+    function removeImplementation(address _implementation) external onlyOwner {
+        require(
+            _implementation != address(0) &&
+                _implementation != address(this) &&
+                _implementation != owner(),
+            "CS001"
+        );
+
+        parcelWhitelistedImplementation[_implementation] = false;
+    }
+
     function isWhitelisted(address _implementation) public view returns (bool) {
         return parcelWhitelistedImplementation[_implementation];
     }
