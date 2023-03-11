@@ -29,6 +29,7 @@
 -   `CS011`: `Operator Only`
 -   `CS012`: `Only Multisig or their operator can perform this action`
 -   `CS013`: `Operator does not exist`
+-   `CS019`: `Implementation Address Cannot be same`
 
 ### Approval Related
 
