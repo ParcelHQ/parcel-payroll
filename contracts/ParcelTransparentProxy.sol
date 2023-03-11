@@ -5,20 +5,20 @@ import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.so
 import "./registry/AddressRegistry.sol";
 
 contract ParcelTransparentProxy is TransparentUpgradeableProxy {
-    address immutable addressRegistery;
+    address immutable addressRegistry;
 
     constructor(
         address logic,
         address admin,
         bytes memory data,
-        address _addressRegistery
+        address _addressRegistry
     ) TransparentUpgradeableProxy(logic, admin, data) {
-        addressRegistery = _addressRegistery;
+        addressRegistry = _addressRegistry;
     }
 
     function upgradeTo(address newImplementation) external override ifAdmin {
         require(
-            IAddressRegistry(addressRegistery).isWhitelisted(newImplementation),
+            IAddressRegistry(addressRegistry).isWhitelisted(newImplementation),
             "Not whitelisted"
         );
 
@@ -30,7 +30,7 @@ contract ParcelTransparentProxy is TransparentUpgradeableProxy {
         bytes memory data
     ) external payable override ifAdmin {
         require(
-            IAddressRegistry(addressRegistery).isWhitelisted(newImplementation),
+            IAddressRegistry(addressRegistry).isWhitelisted(newImplementation),
             "Not whitelisted"
         );
 
