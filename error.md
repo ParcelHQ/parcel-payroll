@@ -4,7 +4,7 @@
 
 -   `CS000`: `Approvers Are Mandatory`
 -   `CS001`: `Approver Address Can not be null`
--   `CS001`: `Duplicate Address for Approver`
+-   `CS002`: `Duplicate Address for Approver`
 
 ### Utils Errors
 
@@ -29,6 +29,7 @@
 -   `CS011`: `Operator Only`
 -   `CS012`: `Only Multisig or their operator can perform this action`
 -   `CS013`: `Operator does not exist`
+-   `CS019`: `Implementation Address Cannot be same`
 
 ### Approval Related
 

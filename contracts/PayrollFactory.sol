@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "./ParcelTransparentProxy.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 interface OrganizerInterface {
     function initialize(
@@ -12,9 +13,14 @@ interface OrganizerInterface {
     function transferOwnership(address newOwner) external;
 }
 
-contract ParcelPayrollFactory {
+contract ParcelPayrollFactory is Ownable2Step {
     address public immutable logic;
     address public immutable addressRegistry;
+
+    event LogicAddressChanged(
+        address indexed oldLogicAddress,
+        address indexed newLogicAddress
+    );
 
     mapping(address => address) public getParcelAddress;
 
@@ -25,7 +31,7 @@ contract ParcelPayrollFactory {
         bytes initData
     );
 
-    constructor(address _logic, address _addressRegistry) {
+    constructor(address _logic, address _addressRegistry) Ownable2Step() {
         logic = _logic;
         addressRegistry = _addressRegistry;
     }
@@ -75,7 +81,7 @@ contract ParcelPayrollFactory {
         address safeAddress
     ) public {
         require(getParcelAddress[msg.sender] == address(0), "CS020");
-        require(msg.sender == safeAddress, "Multisig Only");
+        require(msg.sender == safeAddress, "CS010");
 
         bytes memory _data = abi.encodeCall(
             OrganizerInterface.initialize,
@@ -102,5 +108,12 @@ contract ParcelPayrollFactory {
 
         getParcelAddress[safeAddress] = address(proxy);
         emit OrgOnboarded(safeAddress, address(proxy), predictedAddress, _data);
+    }
+
+    function setNewImplementationAddress(address _logic) public onlyOwner {
+        require(_logic != address(0), "CS003");
+        require(_logic != logic, "CS019");
+        emit LogicAddressChanged(logic, _logic);
+        logic = _logic;
     }
 }
