@@ -1,17 +1,21 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.9;
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
 
-contract Signature {
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "../payroll/Storage.sol";
+
+contract Signature is Storage {
     using ECDSA for bytes32;
 
     // Domain Typehash
     bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
         keccak256(
-            bytes("EIP712Domain(uint256 chainId,address verifyingContract)")
+            bytes(
+                "EIP712Domain(string version, uint256 chainId,address verifyingContract)"
+            )
         );
 
-    // Message Typehash
+    // Payroll Transaction Typehash
     bytes32 internal constant PAYROLL_TX_TYPEHASH =
         keccak256(bytes("PayrollTx(bytes32 rootHash)"));
 
@@ -22,12 +26,18 @@ contract Signature {
     }
 
     /**
-     * @dev get the domain seperator
+     * @dev get the domain separator
+     * @return bytes32 domain separator
      */
     function getDomainSeparator() internal view returns (bytes32) {
         return
             keccak256(
-                abi.encode(EIP712_DOMAIN_TYPEHASH, getChainId(), address(this))
+                abi.encode(
+                    EIP712_DOMAIN_TYPEHASH,
+                    VERSION,
+                    getChainId(),
+                    address(this)
+                )
             );
     }
 
@@ -35,6 +45,7 @@ contract Signature {
      * @dev validate the signature of the payroll transaction
      * @param rootHash hash = encodeTransactionData(recipient, tokenAddress, amount, nonce)
      * @param signature signature
+     * @return address of the signer
      */
     function validatePayrollTxHashes(
         bytes32 rootHash,
