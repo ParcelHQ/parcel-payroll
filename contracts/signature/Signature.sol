@@ -85,9 +85,6 @@ contract Signature {
                 )
             );
             return ECDSA.recover(digest, v - 4, r, s);
-        }
-        if (v == 1) {
-            return address(uint160(uint256(r)));
         } else {
             bytes32 digest = keccak256(
                 abi.encodePacked(
