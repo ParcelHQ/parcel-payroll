@@ -10,9 +10,7 @@ contract Signature is Storage {
     // Domain Typehash
     bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
         keccak256(
-            bytes(
-                "EIP712Domain(string version, uint256 chainId,address verifyingContract)"
-            )
+            bytes("EIP712Domain(uint256 chainId,address verifyingContract)")
         );
 
     // Payroll Transaction Typehash
@@ -32,12 +30,7 @@ contract Signature is Storage {
     function getDomainSeparator() internal view returns (bytes32) {
         return
             keccak256(
-                abi.encode(
-                    EIP712_DOMAIN_TYPEHASH,
-                    VERSION,
-                    getChainId(),
-                    address(this)
-                )
+                abi.encode(EIP712_DOMAIN_TYPEHASH, getChainId(), address(this))
             );
     }
 
