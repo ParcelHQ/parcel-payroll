@@ -103,11 +103,6 @@ contract ParcelTransparentProxy is ERC1967Proxy {
     function upgradeTo(
         address newImplementation
     ) external ifAdmin isWhitelisted(newImplementation) {
-        require(
-            IAddressRegistry(addressRegistry).isWhitelisted(newImplementation),
-            "Not whitelisted"
-        );
-
         _upgradeToAndCall(newImplementation, bytes(""), false);
     }
 
