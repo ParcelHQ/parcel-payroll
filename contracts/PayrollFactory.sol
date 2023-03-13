@@ -14,7 +14,7 @@ interface OrganizerInterface {
 }
 
 contract ParcelPayrollFactory is Ownable2Step {
-    address public immutable logic;
+    address public logic;
     address public immutable addressRegistry;
 
     event LogicAddressChanged(
