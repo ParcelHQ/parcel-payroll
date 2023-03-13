@@ -1,32 +1,28 @@
-//SPDX-License-Identifier: MIT
-pragma solidity 0.8.9;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
+
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 import "./payroll/ApproverManager.sol";
 import "./payroll/PayrollManager.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
-/// @title Organizer - A utility smart contract for Orgss to define and manage their Organizational structure.
+/// @title Organizer - A utility smart contract for Orgs to define and manage their Organizational structure.
 /// @author Sriram Kasyap Meduri - <sriram@parcel.money>
 /// @author Krishna Kant Sharma - <krishna@parcel.money>
 
-contract Organizer is ApproverManager, PayrollManager, Ownable {
+contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+
     //  Events
-    //  Org Onboarded
-    event OrgOnboarded(
+    event OrgSetup(
         address indexed orgAddress,
         address[] indexed approvers,
-        address[] approvers2
+        uint128 approvalsRequired
     );
 
-    //  Org Offboarded
-    event OrgOffboarded(address indexed orgAddress);
-
-    /**
-     * @dev Constructor
-     * @param _allowanceAddress - Address of the Allowance Module on current Network
-     */
-    constructor(address _allowanceAddress) Ownable() {
-        ALLOWANCE_MODULE = _allowanceAddress;
+    constructor() {
+        // Set the threshold to 1, so that the contract can be initialized again and become singleton
+        threshold = 1;
     }
 
     /**
@@ -34,75 +30,37 @@ contract Organizer is ApproverManager, PayrollManager, Ownable {
      * @param _approvers - Array of approver addresses
      * @param approvalsRequired - Number of approvals required for a payout to be executed
      */
-    function onboard(
+    function initialize(
         address[] calldata _approvers,
         uint128 approvalsRequired
-    ) external whenNotPaused {
-        address safeAddress = msg.sender;
+    ) external initializer {
+        __Ownable_init();
+        __Pausable_init();
+        __ReentrancyGuard_init();
+        __UUPSUpgradeable_init();
 
-        require(
-            orgs[safeAddress].approverCount == 0,
-            "Organizer: Org already onboarded"
-        );
-
-        require(_approvers.length > 0, "CS000");
-
-        require(_approvers.length >= approvalsRequired, "CS000");
-
-        require(approvalsRequired != 0, "CS004");
-
-        address currentapprover = SENTINEL_ADDRESS;
-
-        orgs[safeAddress].approverCount = 0;
-        orgs[safeAddress].approvalsRequired = approvalsRequired;
-
-        for (uint256 i = 0; i < _approvers.length; i++) {
-            address approver = _approvers[i];
-            require(
-                // approver address cannot be null.
-                approver != address(0) &&
-                    // approver address cannot be SENTINEL.
-                    approver != SENTINEL_ADDRESS &&
-                    // approver address cannot be same as contract.
-                    approver != address(this) &&
-                    // approver address cannot be same as previous.
-                    currentapprover != approver,
-                "CS001"
-            );
-
-            // No duplicate approvers allowed.
-            require(
-                orgs[safeAddress].approvers[approver] == address(0),
-                "CS002"
-            );
-            orgs[safeAddress].approvers[currentapprover] = approver;
-            currentapprover = approver;
-
-            emit ApproverAdded(safeAddress, approver);
-
-            orgs[safeAddress].approverCount++;
-        }
-        orgs[safeAddress].approvers[currentapprover] = SENTINEL_ADDRESS;
-        emit OrgOnboarded(safeAddress, _approvers, _approvers);
+        setupApprovers(_approvers, approvalsRequired);
+        emit OrgSetup(msg.sender, _approvers, approvalsRequired);
     }
 
     /**
-     * @dev Offboard an Org, remove all approvers and delete the Org
-   
+     * @dev Sweep the contract balance
+     * @param tokenAddress - Address of the token to sweep
      */
-    function offboard() external {
-        _onlyOnboarded(msg.sender);
+    function sweep(address tokenAddress) external nonReentrant onlyOwner {
+        if (tokenAddress == address(0)) {
+            // Transfer ether
+            (bool sent, bytes memory data) = address(msg.sender).call{
+                value: address(this).balance
+            }("");
 
-        // Remove all approvers in Orgs
-        address currentApprover = orgs[msg.sender].approvers[SENTINEL_ADDRESS];
-        while (currentApprover != SENTINEL_ADDRESS) {
-            address nextApprover = orgs[msg.sender].approvers[currentApprover];
-            delete orgs[msg.sender].approvers[currentApprover];
-            currentApprover = nextApprover;
+            require(sent, "CS007");
+        } else {
+            IERC20Upgradeable(tokenAddress).safeTransfer(
+                msg.sender,
+                IERC20Upgradeable(tokenAddress).balanceOf(address(this))
+            );
         }
-
-        delete orgs[msg.sender];
-        emit OrgOffboarded(msg.sender);
     }
 
     /**
@@ -123,7 +81,11 @@ contract Organizer is ApproverManager, PayrollManager, Ownable {
      * @dev Renounce ownership of the contract
      * @notice This function is overridden to prevent renouncing ownership
      */
-    function renounceOwnership() public pure override {
+    function renounceOwnership() public view override onlyOwner {
         revert("Ownable: cannot renounce ownership");
     }
+
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 }
