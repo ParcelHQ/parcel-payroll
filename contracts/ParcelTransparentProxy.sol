@@ -100,7 +100,9 @@ contract ParcelTransparentProxy is ERC1967Proxy {
      *
      * NOTE: Only the admin can call this function. See {ProxyAdmin-upgrade}.
      */
-    function upgradeTo(address newImplementation) external ifAdmin {
+    function upgradeTo(
+        address newImplementation
+    ) external ifAdmin isWhitelisted(newImplementation) {
         require(
             IAddressRegistry(addressRegistry).isWhitelisted(newImplementation),
             "Not whitelisted"
@@ -119,12 +121,7 @@ contract ParcelTransparentProxy is ERC1967Proxy {
     function upgradeToAndCall(
         address newImplementation,
         bytes calldata data
-    ) external payable ifAdmin {
-        require(
-            IAddressRegistry(addressRegistry).isWhitelisted(newImplementation),
-            "Not whitelisted"
-        );
-
+    ) external payable ifAdmin isWhitelisted(newImplementation) {
         _upgradeToAndCall(newImplementation, data, true);
     }
 
@@ -144,5 +141,13 @@ contract ParcelTransparentProxy is ERC1967Proxy {
             "TransparentUpgradeableProxy: admin cannot fallback to proxy target"
         );
         super._beforeFallback();
+    }
+
+    modifier isWhitelisted(address _implementation) {
+        require(
+            IAddressRegistry(addressRegistry).isWhitelisted(_implementation),
+            "Not whitelisted"
+        );
+        _;
     }
 }

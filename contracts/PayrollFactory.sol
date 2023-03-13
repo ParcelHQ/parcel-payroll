@@ -32,6 +32,9 @@ contract ParcelPayrollFactory is Ownable2Step {
     );
 
     constructor(address _logic, address _addressRegistry) Ownable2Step() {
+        require(address(_logic) != address(0), "CS001");
+        require(address(_addressRegistry) != address(0), "CS001");
+
         logic = _logic;
         addressRegistry = _addressRegistry;
     }
