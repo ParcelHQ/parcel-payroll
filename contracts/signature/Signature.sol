@@ -79,33 +79,25 @@ contract Signature is Storage {
     function validatePayrollTxHashes(
         bytes32 rootHash,
         bytes memory signature
-    ) external view returns (address) {
+    ) internal view returns (address) {
         uint8 v;
         bytes32 r;
         bytes32 s;
 
         (v, r, s) = splitSignature(signature);
 
+        bytes32 digest = generateTransactionHash(rootHash);
+
         if (v > 30) {
-            bytes32 payrollHash = generateTransactionHash(rootHash);
-
-            bytes32 digest = keccak256(
-                abi.encodePacked(
-                    "\x19Ethereum Signed Message:\n32",
-                    payrollHash
-                )
+            // If v > 30 then default va (27,28) has been adjusted for eth_sign flow
+            // To support eth_sign and similar we adjust v
+            // and hash the messageHash with the Ethereum message prefix before applying recover
+            digest = keccak256(
+                abi.encodePacked("\x19Ethereum Signed Message:\n32", digest)
             );
-            return ECDSA.recover(digest, v - 4, r, s);
-        } else {
-            bytes32 digest = keccak256(
-                abi.encodePacked(
-                    "\x19\x01",
-                    getDomainSeparator(),
-                    keccak256(abi.encode(PAYROLL_TX_TYPEHASH, rootHash))
-                )
-            );
-
-            return digest.recover(signature);
+            v -= 4;
         }
+
+        return digest.recover(v, r, s);
     }
 }
