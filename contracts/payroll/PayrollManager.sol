@@ -218,12 +218,13 @@ contract PayrollManager is
             if (paymentTokens[i] == address(0)) {
                 // Revert if the contract has any ether left
                 require(address(this).balance == initialBalances[i], "CS018");
-            } else if (
-                IERC20Upgradeable(paymentTokens[i]).balanceOf(address(this)) >
-                initialBalances[i]
-            ) {
-                // Revert if the contract has any tokens left
-                revert("CS018");
+            } else {
+                require(
+                    IERC20Upgradeable(paymentTokens[i]).balanceOf(
+                        address(this)
+                    ) == initialBalances[i],
+                    "CS018"
+                );
             }
         }
     }
