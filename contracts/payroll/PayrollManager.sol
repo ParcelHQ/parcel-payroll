@@ -123,6 +123,7 @@ contract PayrollManager is
      * @param roots Merkle roots of the payroll transaction hashes
      * @param signatures Signatures of the payroll transaction hashes
      * @param paymentTokens Addresses of all the tokens to send in the payroll
+     * Note: The payment tokens should be in the ascending order and should not contain any duplicate tokens
      * @param payoutAmounts Total Amounts of respective tokens to send in the payroll
      */
     function executePayroll(
@@ -158,12 +159,16 @@ contract PayrollManager is
         }
 
         {
+            address currentToken;
             // Fetch the required tokens from the safe via Allowance module
             for (uint256 index = 0; index < paymentTokens.length; index++) {
+                // Check if the token is already fetched
+                require(paymentTokens[index] > currentToken, "CS002");
                 execTransactionFromGnosis(
                     paymentTokens[index],
                     payoutAmounts[index]
                 );
+                currentToken = paymentTokens[index];
             }
         }
 
@@ -218,12 +223,13 @@ contract PayrollManager is
             if (paymentTokens[i] == address(0)) {
                 // Revert if the contract has any ether left
                 require(address(this).balance == initialBalances[i], "CS018");
-            } else if (
-                IERC20Upgradeable(paymentTokens[i]).balanceOf(address(this)) >
-                initialBalances[i]
-            ) {
-                // Revert if the contract has any tokens left
-                revert("CS018");
+            } else {
+                require(
+                    IERC20Upgradeable(paymentTokens[i]).balanceOf(
+                        address(this)
+                    ) == initialBalances[i],
+                    "CS018"
+                );
             }
         }
     }
