@@ -123,6 +123,7 @@ contract PayrollManager is
      * @param roots Merkle roots of the payroll transaction hashes
      * @param signatures Signatures of the payroll transaction hashes
      * @param paymentTokens Addresses of all the tokens to send in the payroll
+     * NOTE: The order of the payment tokens should be in the Ascending order and the same as the order of the payout amounts
      * @param payoutAmounts Total Amounts of respective tokens to send in the payroll
      */
     function executePayroll(
@@ -158,12 +159,18 @@ contract PayrollManager is
         }
 
         {
+            address currentToken;
+
             // Fetch the required tokens from the safe via Allowance module
             for (uint256 index = 0; index < paymentTokens.length; index++) {
+                // Check if the token is different from the current token
+                require(paymentTokens[index] > currentToken, "CS002");
                 execTransactionFromGnosis(
                     paymentTokens[index],
                     payoutAmounts[index]
                 );
+
+                currentToken = paymentTokens[index];
             }
         }
 
