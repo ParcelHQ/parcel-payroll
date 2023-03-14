@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "./registry/AddressRegistry.sol";
@@ -99,6 +99,10 @@ contract ParcelTransparentProxy is ERC1967Proxy {
      * @dev Upgrade the implementation of the proxy.
      *
      * NOTE: Only the admin can call this function. See {ProxyAdmin-upgrade}.
+     * @param newImplementation Address of the new implementation.
+     * If a signature collision exists between the ifAdmin functions (such as the upgradeToAndCall function) and
+     * the functions that are present in the implementation address, the ifAdmin() modifier will forward those
+     * functions in the implementation address via the _fallback() function.
      */
     function upgradeTo(
         address newImplementation
@@ -112,6 +116,9 @@ contract ParcelTransparentProxy is ERC1967Proxy {
      * proxied contract.
      *
      * NOTE: Only the admin can call this function. See {ProxyAdmin-upgradeAndCall}.
+     * If a signature collision exists between the ifAdmin functions (such as the upgradeToAndCall function) and
+     * the functions that are present in the implementation address, the ifAdmin() modifier will forward those
+     * functions in the implementation address via the _fallback() function.
      */
     function upgradeToAndCall(
         address newImplementation,

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "./ParcelTransparentProxy.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
