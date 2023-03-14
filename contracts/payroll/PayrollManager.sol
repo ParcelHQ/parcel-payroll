@@ -207,13 +207,13 @@ contract PayrollManager is
                     }("");
 
                     require(sent, "CS007");
-                } else {
-                    packPayoutNonce(payoutNonce[i]);
-                    // Transfer ERC20 tokens
-                    IERC20Upgradeable(tokenAddress[i]).safeTransfer(
-                        to[i],
-                        amount[i]
-                    );
+                } else if (
+                    IERC20Upgradeable(paymentTokens[i]).balanceOf(
+                        address(this)
+                    ) > initialBalances[i]
+                ) {
+                    // Revert if the contract has any tokens left
+                    revert("CS018");
                 }
             }
         }
