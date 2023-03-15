@@ -9,11 +9,11 @@ import "./payroll/PayrollManager.sol";
 // Errors
 error CannotRenounceOwnership();
 
-/// @title Organizer - A utility smart contract for Orgs to define and manage their Organizational structure.
+/// @title ParcelPayroll - A utility smart contract for Orgs to define and manage their Organizational structure.
 /// @author Sriram Kasyap Meduri - <sriram@parcel.money>
 /// @author Krishna Kant Sharma - <krishna@parcel.money>
 
-contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
+contract ParcelPayroll is UUPSUpgradeable, ApproverManager, PayrollManager {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     //  Events
