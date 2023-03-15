@@ -22,6 +22,29 @@ contract Signature is Storage {
     bytes32 internal constant PAYROLL_TX_TYPEHASH =
         keccak256(bytes("PayrollTx(bytes32 rootHash)"));
 
+    /**
+     * @dev generate the hash of the payroll transaction
+     * @param rootHash hash = encodeTransactionData(recipient, tokenAddress, amount, nonce)
+     * @return bytes32 hash
+     */
+    function generateTransactionHash(
+        bytes32 rootHash
+    ) public view returns (bytes32) {
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                bytes1(0x19),
+                bytes1(0x01),
+                getDomainSeparator(),
+                keccak256(abi.encode(PAYROLL_TX_TYPEHASH, rootHash))
+            )
+        );
+        return digest;
+    }
+
+    /**
+     * @dev get the chain id
+     * @return chainId chain id
+     */
     function getChainId() internal view returns (uint256 chainId) {
         assembly {
             chainId := chainid()
@@ -57,20 +80,6 @@ contract Signature is Storage {
             // final byte (first byte of the next 32 bytes)
             v := byte(0, mload(add(signature, 96)))
         }
-    }
-
-    function generateTransactionHash(
-        bytes32 rootHash
-    ) public view returns (bytes32) {
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                bytes1(0x19),
-                bytes1(0x01),
-                getDomainSeparator(),
-                keccak256(abi.encode(PAYROLL_TX_TYPEHASH, rootHash))
-            )
-        );
-        return digest;
     }
 
     /**

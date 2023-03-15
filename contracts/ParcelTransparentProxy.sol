@@ -59,6 +59,16 @@ contract ParcelTransparentProxy is ERC1967Proxy {
     }
 
     /**
+     * @dev Modifier used internally that will revert if the implementation is not whitelisted.
+     */
+    modifier isWhitelisted(address _implementation) {
+        if (!IAddressRegistry(addressRegistry).isWhitelisted(_implementation))
+            revert ImplementationNotWhitelisted(_implementation);
+
+        _;
+    }
+
+    /**
      * @dev Returns the current admin.
      *
      * NOTE: Only the admin can call this function. See {ProxyAdmin-getProxyAdmin}.
@@ -146,12 +156,5 @@ contract ParcelTransparentProxy is ERC1967Proxy {
             revert ProxyAdminCannotFallbackToProxyTarget();
 
         super._beforeFallback();
-    }
-
-    modifier isWhitelisted(address _implementation) {
-        if (!IAddressRegistry(addressRegistry).isWhitelisted(_implementation))
-            revert ImplementationNotWhitelisted(_implementation);
-
-        _;
     }
 }
