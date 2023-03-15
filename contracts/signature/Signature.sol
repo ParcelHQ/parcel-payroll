@@ -56,6 +56,18 @@ contract Signature is Storage {
      * @return bytes32 domain separator
      */
     function getDomainSeparator() internal view returns (bytes32) {
+        if (address(this) == _cachedThis && block.chainid == _cachedChainId) {
+            return _cachedDomainSeparator;
+        } else {
+            return _buildDomainSeparator();
+        }
+    }
+
+    /**
+     * @dev Build the domain separator
+     * @return bytes32 domain separator
+     */
+    function _buildDomainSeparator() internal view returns (bytes32) {
         return
             keccak256(
                 abi.encode(

@@ -26,6 +26,10 @@ contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
     constructor() {
         // Set the threshold to 1, so that the contract can be initialized again and become singleton
         threshold = 1;
+
+        _cachedChainId = block.chainid;
+        _cachedDomainSeparator = _buildDomainSeparator();
+        _cachedThis = address(this);
     }
 
     /**
