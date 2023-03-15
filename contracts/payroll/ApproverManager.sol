@@ -22,7 +22,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
         // Threshold can only be 0 at initialization.
         // Check ensures that setup function can only be called once.
         require(threshold == 0, "CS015");
-        // Validate that threshold is smaller than number of added approvers.
+        // Validate that threshold is less than or equal to number of added approvers.
         require(_threshold <= _approvers.length, "CS016");
         // There has to be at least one Org approver.
         require(_threshold >= 1, "CS015");

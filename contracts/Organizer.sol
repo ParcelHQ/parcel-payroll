@@ -49,7 +49,7 @@ contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
      */
     function sweep(address tokenAddress) external nonReentrant onlyOwner {
         if (tokenAddress == address(0)) {
-            // Transfer ether
+            // Transfer native tokens
             (bool sent, bytes memory data) = address(msg.sender).call{
                 value: address(this).balance
             }("");

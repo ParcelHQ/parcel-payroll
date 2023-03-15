@@ -196,7 +196,7 @@ contract PayrollManager is
                 // Transfer the funds to the recipient (to) addresses
                 if (tokenAddress[i] == address(0)) {
                     packPayoutNonce(payoutNonce[i]);
-                    // Transfer ether
+                    // Transfer Native tokens
                     (bool sent, bytes memory data) = to[i].call{
                         value: amount[i]
                     }("");
@@ -216,7 +216,7 @@ contract PayrollManager is
         // Check if the contract has any tokens left
         for (uint256 i = 0; i < paymentTokens.length; i++) {
             if (paymentTokens[i] == address(0)) {
-                // Revert if the contract has any ether left
+                // Revert if the contract has any native tokens left
                 require(address(this).balance == initialBalances[i], "CS018");
             } else if (
                 IERC20Upgradeable(paymentTokens[i]).balanceOf(address(this)) >
