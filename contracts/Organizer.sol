@@ -21,8 +21,8 @@ contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
     );
 
     constructor() {
-        // Set the threshold to 1, so that the contract can be initialized again and become singleton
-        threshold = 1;
+        // Enable the Singleton contract to be initialized
+        _disableInitializers();
     }
 
     /**
