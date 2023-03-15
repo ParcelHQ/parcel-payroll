@@ -9,16 +9,14 @@ contract Signature is Storage {
 
     // Domain Typehash
     bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
-        keccak256(
-            bytes("EIP712Domain(uint256 chainId,address verifyingContract)")
-        );
+        keccak256("EIP712Domain(uint256 chainId,address verifyingContract)");
 
     // Payroll Transaction Typehash
     bytes32 internal constant PAYROLL_TX_TYPEHASH =
-        keccak256(bytes("PayrollTx(bytes32 rootHash)"));
+        keccak256("PayrollTx(bytes32 rootHash)");
 
     bytes32 internal constant CANCEL_NONCE =
-        keccak256(bytes("CancelNonce(uint64 nonce)"));
+        keccak256("CancelNonce(uint64 nonce)");
 
     function getChainId() internal view returns (uint256 chainId) {
         assembly {
