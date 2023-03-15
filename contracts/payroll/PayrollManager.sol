@@ -27,99 +27,9 @@ contract PayrollManager is
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /**
-     * @dev Set usage status of a payout nonce
-     * @param payoutNonce Payout nonce to set
+     * @dev Receive Native tokens
      */
-    function packPayoutNonce(uint256 payoutNonce) internal {
-        // Packed payout nonces are stored in an array of uint256
-        // Each uint256 represents 256 payout nonces
-
-        // Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
-        uint256 slot = payoutNonce / 256;
-
-        // The bit index of the uint256 is the payout nonce % 256 (0-255)
-        uint256 bitIndex = payoutNonce % 256;
-
-        // If the slot is greater than the length of the array, we need to add more slots
-        if (packedPayoutNonces.length <= slot) {
-            // Add the required number of slots
-
-            while (packedPayoutNonces.length <= slot) {
-                packedPayoutNonces.push(0);
-            }
-        }
-
-        // Set the bit to 1
-        // This means that the payout nonce has been used
-        packedPayoutNonces[slot] |= 1 << bitIndex;
-    }
-
-    /**
-     * @dev Get usage status of a payout nonce
-     * @param payoutNonce Payout nonce to check
-     * @return Boolean, true for used, false for unused
-     */
-    function getPayoutNonce(uint256 payoutNonce) public view returns (bool) {
-        // Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
-        uint256 slotIndex = payoutNonce / 256;
-
-        // The bit index of the uint256 is the payout nonce % 256 (0-255)
-        uint256 bitIndex = payoutNonce % 256;
-
-        //  If the slot is greater than the length of the array, the payout nonce has not been used
-        if (packedPayoutNonces.length <= slotIndex) {
-            return false;
-        } else {
-            // If the bit is set, the payout nonce has been used, if not, it has not been used
-            return (packedPayoutNonces[slotIndex] & (1 << bitIndex)) != 0;
-        }
-    }
-
-    /**
-     * @dev Encode the transaction data for the payroll payout
-     * @param to Address to send the funds to
-     * @param tokenAddress Address of the token to send
-     * @param amount Amount of tokens to send
-     * @param payoutNonce Payout nonce to use
-     * @return encodedHash Encoded hash of the transaction data
-     */
-    function encodeTransactionData(
-        address to,
-        address tokenAddress,
-        uint256 amount,
-        uint64 payoutNonce
-    ) public view returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(owner(), to, tokenAddress, amount, payoutNonce)
-            );
-    }
-
-    /**
-     * @dev This function validates the signature and verifies if signatures are unique and the approver belongs to safe
-     * @param roots Address of the token to send
-     * @param signatures Amount of tokens to send
-     */
-    function validateSignatures(
-        bytes32[] memory roots,
-        bytes[] memory signatures
-    ) internal view {
-        // Validate the roots via approver signatures
-        address currentApprover;
-        for (uint256 i = 0; i < roots.length; i++) {
-            // Recover signer from the signature
-            address signer = validatePayrollTxHashes(roots[i], signatures[i]);
-            // Check if the signer is an approver & is different from the current approver
-            if (
-                signer == SENTINEL_APPROVER ||
-                approvers[signer] == address(0) ||
-                signer <= currentApprover
-            ) revert InvalidPayoutSignature(signatures[i]);
-
-            // Set the current approver to the signer
-            currentApprover = signer;
-        }
-    }
+    receive() external payable {}
 
     /**
      * @dev Validate the payroll transaction hashes and execute the payroll
@@ -244,9 +154,99 @@ contract PayrollManager is
     }
 
     /**
-     * @dev Receive Native tokens
+     * @dev Get usage status of a payout nonce
+     * @param payoutNonce Payout nonce to check
+     * @return Boolean, true for used, false for unused
      */
-    receive() external payable {}
+    function getPayoutNonce(uint256 payoutNonce) public view returns (bool) {
+        // Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
+        uint256 slotIndex = payoutNonce / 256;
+
+        // The bit index of the uint256 is the payout nonce % 256 (0-255)
+        uint256 bitIndex = payoutNonce % 256;
+
+        //  If the slot is greater than the length of the array, the payout nonce has not been used
+        if (packedPayoutNonces.length <= slotIndex) {
+            return false;
+        } else {
+            // If the bit is set, the payout nonce has been used, if not, it has not been used
+            return (packedPayoutNonces[slotIndex] & (1 << bitIndex)) != 0;
+        }
+    }
+
+    /**
+     * @dev Encode the transaction data for the payroll payout
+     * @param to Address to send the funds to
+     * @param tokenAddress Address of the token to send
+     * @param amount Amount of tokens to send
+     * @param payoutNonce Payout nonce to use
+     * @return encodedHash Encoded hash of the transaction data
+     */
+    function encodeTransactionData(
+        address to,
+        address tokenAddress,
+        uint256 amount,
+        uint64 payoutNonce
+    ) public view returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(owner(), to, tokenAddress, amount, payoutNonce)
+            );
+    }
+
+    /**
+     * @dev Set usage status of a payout nonce
+     * @param payoutNonce Payout nonce to set
+     */
+    function packPayoutNonce(uint256 payoutNonce) internal {
+        // Packed payout nonces are stored in an array of uint256
+        // Each uint256 represents 256 payout nonces
+
+        // Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
+        uint256 slot = payoutNonce / 256;
+
+        // The bit index of the uint256 is the payout nonce % 256 (0-255)
+        uint256 bitIndex = payoutNonce % 256;
+
+        // If the slot is greater than the length of the array, we need to add more slots
+        if (packedPayoutNonces.length <= slot) {
+            // Add the required number of slots
+
+            while (packedPayoutNonces.length <= slot) {
+                packedPayoutNonces.push(0);
+            }
+        }
+
+        // Set the bit to 1
+        // This means that the payout nonce has been used
+        packedPayoutNonces[slot] |= 1 << bitIndex;
+    }
+
+    /**
+     * @dev This function validates the signature and verifies if signatures are unique and the approver belongs to safe
+     * @param roots Address of the token to send
+     * @param signatures Amount of tokens to send
+     */
+    function validateSignatures(
+        bytes32[] memory roots,
+        bytes[] memory signatures
+    ) internal view {
+        // Validate the roots via approver signatures
+        address currentApprover;
+        for (uint256 i = 0; i < roots.length; i++) {
+            // Recover signer from the signature
+            address signer = validatePayrollTxHashes(roots[i], signatures[i]);
+            // Check if the signer is an approver & is different from the current approver
+            if (
+                signer == SENTINEL_APPROVER ||
+                approvers[signer] == address(0) ||
+                signer <= currentApprover
+            ) revert InvalidPayoutSignature(signatures[i]);
+
+            // Set the current approver to the signer
+            currentApprover = signer;
+        }
+    }
 
     /**
      * @dev Execute transaction from Gnosis Safe
