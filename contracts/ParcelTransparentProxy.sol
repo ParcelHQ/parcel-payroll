@@ -4,6 +4,10 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "./registry/AddressRegistry.sol";
 
+// Errors
+error ProxyAdminCannotFallbackToProxyTarget();
+error ImplementationNotWhitelisted(address implementation);
+
 /**
  * @dev This contract implements a proxy that is upgradeable by an admin.
  *
@@ -138,18 +142,16 @@ contract ParcelTransparentProxy is ERC1967Proxy {
      * @dev Makes sure the admin cannot access the fallback function. See {Proxy-_beforeFallback}.
      */
     function _beforeFallback() internal virtual override {
-        require(
-            msg.sender != _getAdmin(),
-            "TransparentUpgradeableProxy: admin cannot fallback to proxy target"
-        );
+        if (msg.sender == _getAdmin())
+            revert ProxyAdminCannotFallbackToProxyTarget();
+
         super._beforeFallback();
     }
 
     modifier isWhitelisted(address _implementation) {
-        require(
-            IAddressRegistry(addressRegistry).isWhitelisted(_implementation),
-            "Not whitelisted"
-        );
+        if (!IAddressRegistry(addressRegistry).isWhitelisted(_implementation))
+            revert ImplementationNotWhitelisted(_implementation);
+
         _;
     }
 }

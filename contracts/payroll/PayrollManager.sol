@@ -10,6 +10,14 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "../interfaces/IAllowanceModule.sol";
 import "../signature/Signature.sol";
 
+// Errors
+error InvalidPayoutSignature(bytes signature);
+error PayrollDataLengthMismatch();
+error RootSignatureLengthMismatch();
+error PaymentTokenLengthMismatch();
+error TransferFailed(address tokenAddress, uint256 amount);
+error TokensLeftInContract(address tokenAddress);
+
 contract PayrollManager is
     Signature,
     OwnableUpgradeable,
@@ -102,12 +110,12 @@ contract PayrollManager is
             // Recover signer from the signature
             address signer = validatePayrollTxHashes(roots[i], signatures[i]);
             // Check if the signer is an approver & is different from the current approver
-            require(
-                signer != SENTINEL_APPROVER &&
-                    approvers[signer] != address(0) &&
-                    signer > currentApprover,
-                "CS014"
-            );
+            if (
+                signer == SENTINEL_APPROVER ||
+                approvers[signer] == address(0) ||
+                signer <= currentApprover
+            ) revert InvalidPayoutSignature(signatures[i]);
+
             // Set the current approver to the signer
             currentApprover = signer;
         }
@@ -137,11 +145,17 @@ contract PayrollManager is
         uint96[] memory payoutAmounts
     ) external nonReentrant whenNotPaused {
         // Validate the Input Data
-        require(to.length == tokenAddress.length, "CS004");
-        require(to.length == amount.length, "CS004");
-        require(to.length == payoutNonce.length, "CS004");
-        require(roots.length == signatures.length, "CS004");
-        require(paymentTokens.length == payoutAmounts.length, "CS004");
+        if (
+            to.length != tokenAddress.length ||
+            to.length != amount.length ||
+            to.length != payoutNonce.length
+        ) revert PayrollDataLengthMismatch();
+
+        if (roots.length != signatures.length)
+            revert RootSignatureLengthMismatch();
+
+        if (paymentTokens.length != payoutAmounts.length)
+            revert PaymentTokenLengthMismatch();
 
         validateSignatures(roots, signatures);
 
@@ -201,7 +215,7 @@ contract PayrollManager is
                         value: amount[i]
                     }("");
 
-                    require(sent, "CS007");
+                    if (!sent) revert TransferFailed(address(0), amount[i]);
                 } else {
                     packPayoutNonce(payoutNonce[i]);
                     // Transfer ERC20 tokens
@@ -217,13 +231,14 @@ contract PayrollManager is
         for (uint256 i = 0; i < paymentTokens.length; i++) {
             if (paymentTokens[i] == address(0)) {
                 // Revert if the contract has any native tokens left
-                require(address(this).balance == initialBalances[i], "CS018");
+                if (address(this).balance != initialBalances[i])
+                    revert TokensLeftInContract(address(0));
             } else if (
                 IERC20Upgradeable(paymentTokens[i]).balanceOf(address(this)) >
                 initialBalances[i]
             ) {
                 // Revert if the contract has any tokens left
-                revert("CS018");
+                revert TokensLeftInContract(paymentTokens[i]);
             }
         }
     }
