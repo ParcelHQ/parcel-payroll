@@ -5,6 +5,9 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "./Storage.sol";
 
+// Errors
+error OnlyApprover();
+
 contract ApproverManager is Storage, OwnableUpgradeable {
     event AddedApprover(address approver);
     event RemovedApprover(address approver);

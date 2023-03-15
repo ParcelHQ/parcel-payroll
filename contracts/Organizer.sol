@@ -88,4 +88,17 @@ contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
+
+    function invalidateNonce(uint64 nonce, bytes memory signature) external {
+        // Check if the nonce is valid
+
+        address signer = validateCancelNonce(nonce, signature);
+
+        if (!isApprover(signer)) {
+            revert OnlyApprover();
+        }
+
+        // Invalidate the nonce
+        packPayoutNonce(nonce);
+    }
 }
