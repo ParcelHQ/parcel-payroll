@@ -9,6 +9,9 @@ interface IAddressRegistry {
     ) external view returns (bool);
 }
 
+// Errors
+error InvalidImplementationProvided(address implementation);
+
 contract AddressRegistry is Ownable2Step {
     mapping(address => bool) internal parcelWhitelistedImplementation;
 
@@ -23,12 +26,11 @@ contract AddressRegistry is Ownable2Step {
         address _implementation,
         bool isActive
     ) external onlyOwner {
-        require(
-            _implementation != address(0) &&
-                _implementation != address(this) &&
-                _implementation != owner(),
-            "CS001"
-        );
+        if (
+            _implementation == address(0) ||
+            _implementation == address(this) ||
+            _implementation == owner()
+        ) revert InvalidImplementationProvided(_implementation);
 
         parcelWhitelistedImplementation[_implementation] = isActive;
         emit ImplementationWhitelisted(_implementation, isActive);

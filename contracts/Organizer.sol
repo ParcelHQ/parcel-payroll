@@ -6,6 +6,9 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "./payroll/ApproverManager.sol";
 import "./payroll/PayrollManager.sol";
 
+// Errors
+error CannotRenounceOwnership();
+
 /// @title Organizer - A utility smart contract for Orgs to define and manage their Organizational structure.
 /// @author Sriram Kasyap Meduri - <sriram@parcel.money>
 /// @author Krishna Kant Sharma - <krishna@parcel.money>
@@ -57,7 +60,7 @@ contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
                 value: address(this).balance
             }("");
 
-            require(sent, "CS007");
+            if (!sent) revert TransferFailed(address(0), address(this).balance);
         } else {
             IERC20Upgradeable(tokenAddress).safeTransfer(
                 msg.sender,
@@ -85,7 +88,7 @@ contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
      * @notice This function is overridden to prevent renouncing ownership
      */
     function renounceOwnership() public view override onlyOwner {
-        revert("Ownable: cannot renounce ownership");
+        revert CannotRenounceOwnership();
     }
 
     function _authorizeUpgrade(

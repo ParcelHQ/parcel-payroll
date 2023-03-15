@@ -4,6 +4,9 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "../payroll/Storage.sol";
 
+// Errors
+error InvalidSignatureLength();
+
 contract Signature is Storage {
     using ECDSA for bytes32;
 
@@ -18,6 +21,35 @@ contract Signature is Storage {
     // Payroll Transaction Typehash
     bytes32 internal constant PAYROLL_TX_TYPEHASH =
         keccak256(bytes("PayrollTx(bytes32 rootHash)"));
+
+    /**
+     * @dev generate the hash of the payroll transaction
+     * @param rootHash hash = encodeTransactionData(recipient, tokenAddress, amount, nonce)
+     * @return bytes32 hash
+     */
+    function generateTransactionHash(
+        bytes32 rootHash
+    ) public view returns (bytes32) {
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                bytes1(0x19),
+                bytes1(0x01),
+                getDomainSeparator(),
+                keccak256(abi.encode(PAYROLL_TX_TYPEHASH, rootHash))
+            )
+        );
+        return digest;
+    }
+
+    /**
+     * @dev get the chain id
+     * @return chainId chain id
+     */
+    function getChainId() internal view returns (uint256 chainId) {
+        assembly {
+            chainId := chainid()
+        }
+    }
 
     /**
      * @dev get the domain separator
@@ -50,7 +82,7 @@ contract Signature is Storage {
     function splitSignature(
         bytes memory signature
     ) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
-        require(signature.length == 65, "invalid signature length");
+        if (signature.length != 65) revert InvalidSignatureLength();
 
         assembly {
             // first 32 bytes, after the length prefix
@@ -60,20 +92,6 @@ contract Signature is Storage {
             // final byte (first byte of the next 32 bytes)
             v := byte(0, mload(add(signature, 96)))
         }
-    }
-
-    function generateTransactionHash(
-        bytes32 rootHash
-    ) public view returns (bytes32) {
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                bytes1(0x19),
-                bytes1(0x01),
-                getDomainSeparator(),
-                keccak256(abi.encode(PAYROLL_TX_TYPEHASH, rootHash))
-            )
-        );
-        return digest;
     }
 
     /**
