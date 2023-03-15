@@ -12,15 +12,14 @@ contract Signature is Storage {
 
     // Domain Typehash
     bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
-        keccak256(
-            bytes(
-                "EIP712Domain(string version, uint256 chainId,address verifyingContract)"
-            )
-        );
+        keccak256("EIP712Domain(uint256 chainId,address verifyingContract)");
 
     // Payroll Transaction Typehash
     bytes32 internal constant PAYROLL_TX_TYPEHASH =
-        keccak256(bytes("PayrollTx(bytes32 rootHash)"));
+        keccak256("PayrollTx(bytes32 rootHash)");
+
+    bytes32 internal constant CANCEL_NONCE =
+        keccak256("CancelNonce(uint64 nonce)");
 
     /**
      * @dev generate the hash of the payroll transaction
@@ -36,6 +35,20 @@ contract Signature is Storage {
                 bytes1(0x01),
                 getDomainSeparator(),
                 keccak256(abi.encode(PAYROLL_TX_TYPEHASH, rootHash))
+            )
+        );
+        return digest;
+    }
+
+    function getCancelTransactionHash(
+        uint64 nonce
+    ) public view returns (bytes32) {
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                bytes1(0x19),
+                bytes1(0x01),
+                getDomainSeparator(),
+                keccak256(abi.encode(CANCEL_NONCE, nonce))
             )
         );
         return digest;
@@ -111,6 +124,31 @@ contract Signature is Storage {
         (v, r, s) = splitSignature(signature);
 
         bytes32 digest = generateTransactionHash(rootHash);
+
+        if (v > 30) {
+            // If v > 30 then default va (27,28) has been adjusted for eth_sign flow
+            // To support eth_sign and similar we adjust v
+            // and hash the messageHash with the Ethereum message prefix before applying recover
+            digest = keccak256(
+                abi.encodePacked("\x19Ethereum Signed Message:\n32", digest)
+            );
+            v -= 4;
+        }
+
+        return digest.recover(v, r, s);
+    }
+
+    function validateCancelNonce(
+        uint64 nonce,
+        bytes memory signature
+    ) internal view returns (address) {
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+
+        (v, r, s) = splitSignature(signature);
+
+        bytes32 digest = getCancelTransactionHash(nonce);
 
         if (v > 30) {
             // If v > 30 then default va (27,28) has been adjusted for eth_sign flow

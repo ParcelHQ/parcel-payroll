@@ -13,6 +13,8 @@ error InvalidAddressProvided(address providedAddress);
 error DuplicateAddressProvided(address providedAddress);
 error ApproverDoesNotExist(address approver);
 error ApproverAlreadyExists(address approver);
+error OnlyApprover();
+error UintOverflow();
 
 contract ApproverManager is Storage, OwnableUpgradeable {
     // Events
@@ -23,29 +25,29 @@ contract ApproverManager is Storage, OwnableUpgradeable {
     /**
      * @notice Adds the approver `approver` to the Org and updates the threshold to `_threshold`.
      * @dev This can only be done via a Org transaction.
-     * @param approver New approver address.
+     * @param newApprover New approver address.
      * @param _threshold New threshold.
      */
     function addApproverWithThreshold(
-        address approver,
+        address newApprover,
         uint128 _threshold
     ) public onlyOwner {
         // Approver address cannot be null, the sentinel, the contract or the Org itself.
         if (
-            approver == address(0) ||
-            approver == SENTINEL_APPROVER ||
-            approver == address(this) ||
-            approver == owner()
-        ) revert InvalidAddressProvided(approver);
+            newApprover == address(0) ||
+            newApprover == SENTINEL_APPROVER ||
+            newApprover == address(this) ||
+            newApprover == owner()
+        ) revert InvalidAddressProvided(newApprover);
 
         // No duplicate approvers allowed.
-        if (approvers[approver] != address(0))
-            revert ApproverAlreadyExists(approver);
+        if (approvers[newApprover] != address(0))
+            revert ApproverAlreadyExists(newApprover);
 
-        approvers[approver] = approvers[SENTINEL_APPROVER];
-        approvers[SENTINEL_APPROVER] = approver;
+        approvers[newApprover] = approvers[SENTINEL_APPROVER];
+        approvers[SENTINEL_APPROVER] = newApprover;
         approverCount++;
-        emit AddedApprover(approver);
+        emit AddedApprover(newApprover);
         // Change threshold if threshold was changed.
         if (threshold != _threshold) changeThreshold(_threshold);
     }
