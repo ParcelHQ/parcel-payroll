@@ -14,7 +14,7 @@ interface OrganizerInterface {
 }
 
 //  Errors
-error InvliadLogicAddressProvided(address logicAddress);
+error InvalidLogicAddressProvided(address logicAddress);
 error InvalidAddressRegistryProvided(address addressRegistry);
 error OrgOnboardedAlready(address orgAddress);
 error CannotDeployForOthers();
@@ -66,7 +66,7 @@ contract ParcelPayrollFactory is Ownable2Step {
      */
     constructor(address _logic, address _addressRegistry) Ownable2Step() {
         if (address(_logic) == address(0))
-            revert InvliadLogicAddressProvided(_logic);
+            revert InvalidLogicAddressProvided(_logic);
         if (address(_addressRegistry) == address(0))
             revert InvalidAddressRegistryProvided(_addressRegistry);
 
@@ -172,7 +172,7 @@ contract ParcelPayrollFactory is Ownable2Step {
      */
     function setNewImplementationAddress(address _logic) public onlyOwner {
         if (_logic == address(0) || _logic != logic)
-            revert InvliadLogicAddressProvided(_logic);
+            revert InvalidLogicAddressProvided(_logic);
 
         emit LogicAddressChanged(logic, _logic);
         logic = _logic;
