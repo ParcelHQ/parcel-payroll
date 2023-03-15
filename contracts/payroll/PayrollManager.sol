@@ -122,8 +122,6 @@ contract PayrollManager is
      * @param proof Merkle proof of the payroll transaction hashes
      * @param roots Merkle roots of the payroll transaction hashes
      * @param signatures Signatures of the payroll transaction hashes
-     * @param paymentTokens Addresses of all the tokens to send in the payroll
-     * @param payoutAmounts Total Amounts of respective tokens to send in the payroll
      */
     function executePayroll(
         address[] memory to,
@@ -132,40 +130,31 @@ contract PayrollManager is
         uint64[] memory payoutNonce,
         bytes32[][][] memory proof,
         bytes32[] memory roots,
-        bytes[] memory signatures,
-        address[] memory paymentTokens,
-        uint96[] memory payoutAmounts
-    ) external nonReentrant whenNotPaused {
+        bytes[] memory signatures
+    )
+        external
+        // address[] memory paymentTokens,
+        // uint96[] memory payoutAmounts
+        nonReentrant
+        whenNotPaused
+    {
         // Validate the Input Data
         require(to.length == tokenAddress.length, "CS004");
         require(to.length == amount.length, "CS004");
         require(to.length == payoutNonce.length, "CS004");
         require(roots.length == signatures.length, "CS004");
-        require(paymentTokens.length == payoutAmounts.length, "CS004");
+        // require(paymentTokens.length == payoutAmounts.length, "CS004");
 
         validateSignatures(roots, signatures);
 
-        // create a new array to store initial balances of  payment tokens
-        uint256[] memory initialBalances = new uint256[](paymentTokens.length);
+        // Initialize the approvals array
+        bool[] memory isApproved = new bool[](to.length);
 
-        for (uint256 i = 0; i < paymentTokens.length; i++) {
-            if (paymentTokens[i] == address(0)) {
-                initialBalances[i] = address(this).balance;
-            } else {
-                initialBalances[i] = IERC20Upgradeable(paymentTokens[i])
-                    .balanceOf(address(this));
-            }
-        }
+        // Initialize the flag token address
+        address tokenFlag = tokenAddress[0];
 
-        {
-            // Fetch the required tokens from the safe via Allowance module
-            for (uint256 index = 0; index < paymentTokens.length; index++) {
-                execTransactionFromGnosis(
-                    paymentTokens[index],
-                    payoutAmounts[index]
-                );
-            }
-        }
+        // Initialize the flag token amount to fetch
+        uint128 tokenFlagAmountToFetch = 0;
 
         // Loop through the payouts
         for (uint256 i = 0; i < to.length; i++) {
@@ -193,7 +182,29 @@ contract PayrollManager is
 
             // Check if the approvals are greater than or equal to the required approvals
             if (approvals >= threshold && !getPayoutNonce(payoutNonce[i])) {
-                // Transfer the funds to the recipient (to) addresses
+                // Set the approval to true
+                isApproved[i] = true;
+
+                // Check if the token address is the same as the flag token address
+                if (tokenFlag != tokenAddress[i]) {
+                    // Fetch the flag token from Gnosis
+                    execTransactionFromGnosis(
+                        tokenFlag,
+                        uint96(tokenFlagAmountToFetch)
+                    );
+                    // Set the flag token address to the current token address
+                    tokenFlag = tokenAddress[i];
+                    tokenFlagAmountToFetch = amount[i];
+                } else {
+                    tokenFlagAmountToFetch = tokenFlagAmountToFetch + amount[i];
+                }
+            }
+        }
+
+        // Loop through the approvals
+        for (uint i = 0; i < isApproved.length; i++) {
+            // Transfer the funds to the recipient (to) addresses
+            if (isApproved[i]) {
                 if (tokenAddress[i] == address(0)) {
                     packPayoutNonce(payoutNonce[i]);
                     // Transfer ether
@@ -214,18 +225,18 @@ contract PayrollManager is
         }
 
         // Check if the contract has any tokens left
-        for (uint256 i = 0; i < paymentTokens.length; i++) {
-            if (paymentTokens[i] == address(0)) {
-                // Revert if the contract has any ether left
-                require(address(this).balance == initialBalances[i], "CS018");
-            } else if (
-                IERC20Upgradeable(paymentTokens[i]).balanceOf(address(this)) >
-                initialBalances[i]
-            ) {
-                // Revert if the contract has any tokens left
-                revert("CS018");
-            }
-        }
+        // for (uint256 i = 0; i < paymentTokens.length; i++) {
+        //     if (paymentTokens[i] == address(0)) {
+        //         // Revert if the contract has any ether left
+        //         require(address(this).balance == initialBalances[i], "CS018");
+        //     } else if (
+        //         IERC20Upgradeable(paymentTokens[i]).balanceOf(address(this)) >
+        //         initialBalances[i]
+        //     ) {
+        //         // Revert if the contract has any tokens left
+        //         revert("CS018");
+        //     }
+        // }
     }
 
     /**
