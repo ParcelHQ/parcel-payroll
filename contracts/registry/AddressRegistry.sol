@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
@@ -11,6 +11,11 @@ interface IAddressRegistry {
 
 contract AddressRegistry is Ownable2Step {
     mapping(address => bool) internal parcelWhitelistedImplementation;
+
+    event ImplementationWhitelisted(
+        address indexed implementation,
+        bool isActive
+    );
 
     constructor() Ownable2Step() {}
 
@@ -26,9 +31,12 @@ contract AddressRegistry is Ownable2Step {
         );
 
         parcelWhitelistedImplementation[_implementation] = isActive;
+        emit ImplementationWhitelisted(_implementation, isActive);
     }
 
-    function isWhitelisted(address _implementation) public view returns (bool) {
+    function isWhitelisted(
+        address _implementation
+    ) external view returns (bool) {
         return parcelWhitelistedImplementation[_implementation];
     }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
@@ -21,8 +21,8 @@ contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
     );
 
     constructor() {
-        // Set the threshold to 1, so that the contract can be initialized again and become singleton
-        threshold = 1;
+        // So that the contract cannot be initialized again and become singleton
+        _disableInitializers();
     }
 
     /**
@@ -50,7 +50,7 @@ contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
     function sweep(address tokenAddress) external nonReentrant onlyOwner {
         if (tokenAddress == address(0)) {
             // Transfer ether
-            (bool sent, bytes memory data) = address(msg.sender).call{
+            (bool sent, bytes memory data) = msg.sender.call{
                 value: address(this).balance
             }("");
 
@@ -88,4 +88,17 @@ contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
+
+    function invalidateNonce(uint64 nonce, bytes memory signature) external {
+        // Check if the nonce is valid
+
+        address signer = validateCancelNonce(nonce, signature);
+
+        if (!isApprover(signer)) {
+            revert OnlyApprover();
+        }
+
+        // Invalidate the nonce
+        packPayoutNonce(nonce);
+    }
 }

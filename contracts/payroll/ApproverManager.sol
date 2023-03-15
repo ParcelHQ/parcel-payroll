@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "./Storage.sol";
+
+// Errors
+error OnlyApprover();
+error UintOverflow();
 
 contract ApproverManager is Storage, OwnableUpgradeable {
     event AddedApprover(address approver);
@@ -45,6 +49,12 @@ contract ApproverManager is Storage, OwnableUpgradeable {
             currentApprover = approver;
         }
         approvers[currentApprover] = SENTINEL_APPROVER;
+
+        // Added check for safe type casting.
+        if (_approvers.length > type(uint128).max) {
+            revert UintOverflow();
+        }
+
         approverCount = uint128(_approvers.length);
         threshold = _threshold;
     }
@@ -52,27 +62,27 @@ contract ApproverManager is Storage, OwnableUpgradeable {
     /**
      * @notice Adds the approver `approver` to the Org and updates the threshold to `_threshold`.
      * @dev This can only be done via a Org transaction.
-     * @param approver New approver address.
+     * @param newApprover New approver address.
      * @param _threshold New threshold.
      */
     function addApproverWithThreshold(
-        address approver,
+        address newApprover,
         uint128 _threshold
     ) public onlyOwner {
         // Approver address cannot be null, the sentinel or the Org itself.
         require(
-            approver != address(0) &&
-                approver != SENTINEL_APPROVER &&
-                approver != address(this) &&
-                approver != owner(),
+            newApprover != address(0) &&
+                newApprover != SENTINEL_APPROVER &&
+                newApprover != address(this) &&
+                newApprover != owner(),
             "CS001"
         );
         // No duplicate approvers allowed.
-        require(approvers[approver] == address(0), "CS001");
-        approvers[approver] = approvers[SENTINEL_APPROVER];
-        approvers[SENTINEL_APPROVER] = approver;
+        require(approvers[newApprover] == address(0), "CS001");
+        approvers[newApprover] = approvers[SENTINEL_APPROVER];
+        approvers[SENTINEL_APPROVER] = newApprover;
         approverCount++;
-        emit AddedApprover(approver);
+        emit AddedApprover(newApprover);
         // Change threshold if threshold was changed.
         if (threshold != _threshold) changeThreshold(_threshold);
     }
