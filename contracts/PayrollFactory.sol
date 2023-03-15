@@ -13,18 +13,46 @@ interface IOrganizer {
     function transferOwnership(address newOwner) external;
 }
 
+//  Errors
+error InvalidLogicAddressProvided(address logicAddress);
+error InvalidAddressRegistryProvided(address addressRegistry);
+error OrgOnboardedAlready(address orgAddress);
+error CannotDeployForOthers();
+error ProxyDoesntMatchPrediction(address proxy, address prediction);
+
+/**
+ * @title ParcelPayrollFactory - A factory contract to deploy ParcelPayroll contracts
+ * @author Krishna Kant Sharma - <krishna@parcel.money>
+ * @author Sriram Kasyap Meduri - <sriram@parcel.money>
+ */
+
 contract ParcelPayrollFactory is Ownable2Step {
     address public logic;
     address public immutable addressRegistry;
     bytes proxyCreationCode;
 
+    /**
+     * @dev Emitted when the logic address is changed
+     * @param oldLogicAddress - The old logic address
+     * @param newLogicAddress - The new logic address
+     */
     event LogicAddressChanged(
         address indexed oldLogicAddress,
         address indexed newLogicAddress
     );
 
+    /**
+     * @dev Mapping of org address to ParcelPayroll contract address
+     */
     mapping(address => address) public parcelAddress;
 
+    /**
+     * @dev Emitted when a new ParcelPayroll contract is deployed
+     * @param safeAddress - The safe address of the org
+     * @param proxy -  Address of the ParcelPayroll contract
+     * @param implementation - Address of the logic contract
+     * @param initData - The data used to initialize the ParcelPayroll contract
+     */
     event OrgOnboarded(
         address safeAddress,
         address indexed proxy,
@@ -32,15 +60,30 @@ contract ParcelPayrollFactory is Ownable2Step {
         bytes initData
     );
 
+    /**
+     * @dev Constructor for ParcelPayrollFactory
+     * @param _logic - Address of the logic contract
+     * @param _addressRegistry - Address of the AddressRegistry contract
+     */
     constructor(address _logic, address _addressRegistry) Ownable2Step() {
-        require(address(_logic) != address(0), "CS001");
-        require(address(_addressRegistry) != address(0), "CS001");
+        if (address(_logic) == address(0))
+            revert InvalidLogicAddressProvided(_logic);
+        if (address(_addressRegistry) == address(0))
+            revert InvalidAddressRegistryProvided(_addressRegistry);
 
         logic = _logic;
         addressRegistry = _addressRegistry;
         proxyCreationCode = type(ParcelTransparentProxy).creationCode;
     }
 
+    /**
+     * @dev Compute / Predict the address of the ParcelPayroll contract to be deployed
+     * @param salt - Salt used to compute the address
+     * @param _approvers - Array of approver addresses
+     * @param approvalsRequired - Number of approvals required for a payout to be executed
+     * @param safeAddress - The safe address of the org
+     * @return predictedAddress - The predicted address of the ParcelPayroll contract
+     */
     function computeAddress(
         bytes32 salt,
         address[] calldata _approvers,
@@ -79,12 +122,19 @@ contract ParcelPayrollFactory is Ownable2Step {
         return predictedAddress;
     }
 
+    /**
+     * @dev Deploy a new ParcelPayroll contract
+     * @param salt - Salt used to compute the address
+     * @param _approvers - Array of approver addresses
+     * @param approvalsRequired - Number of approvals required for a payout to be executed
+     */
     function onboard(
         bytes32 salt,
         address[] calldata _approvers,
         uint128 approvalsRequired
     ) public {
-        require(parcelAddress[msg.sender] == address(0), "CS020");
+        if (parcelAddress[msg.sender] != address(0))
+            revert OrgOnboardedAlready(msg.sender);
 
         bytes memory _data = abi.encodeCall(
             IOrganizer.initialize,
@@ -107,15 +157,21 @@ contract ParcelPayrollFactory is Ownable2Step {
 
         IOrganizer(address(proxy)).transferOwnership(msg.sender);
 
-        require(address(proxy) == predictedAddress);
+        if (address(proxy) != predictedAddress)
+            revert ProxyDoesntMatchPrediction(address(proxy), predictedAddress);
 
         parcelAddress[msg.sender] = address(proxy);
         emit OrgOnboarded(msg.sender, address(proxy), predictedAddress, _data);
     }
 
+    /**
+     * @dev Set new Implementation address
+     * @param _logic - Address of the new logic contract
+     */
     function setNewImplementationAddress(address _logic) public onlyOwner {
-        require(_logic != address(0), "CS003");
-        require(_logic != logic, "CS019");
+        if (_logic == address(0) || _logic != logic)
+            revert InvalidLogicAddressProvided(_logic);
+
         emit LogicAddressChanged(logic, _logic);
         logic = _logic;
     }

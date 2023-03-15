@@ -24,6 +24,13 @@ abstract contract Storage {
     **/
     uint256[] packedPayoutNonces;
 
+    // Cached domain separator
+    bytes32 _cachedDomainSeparator;
+    // Cached chain ID
+    uint256 immutable _cachedChainId = block.chainid;
+    // Cached contract address
+    address _cachedThis;
+
     // Storage Gaps to prevent upgrade errors
     uint256[48] __gap;
 }
