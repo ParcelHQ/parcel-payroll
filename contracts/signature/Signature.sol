@@ -10,9 +10,7 @@ contract Signature is Storage {
     // Domain Typehash
     bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
         keccak256(
-            bytes(
-                "EIP712Domain(string version, uint256 chainId,address verifyingContract)"
-            )
+            bytes("EIP712Domain(uint256 chainId,address verifyingContract)")
         );
 
     // Payroll Transaction Typehash
@@ -32,13 +30,37 @@ contract Signature is Storage {
     function getDomainSeparator() internal view returns (bytes32) {
         return
             keccak256(
-                abi.encode(
-                    EIP712_DOMAIN_TYPEHASH,
-                    VERSION,
-                    getChainId(),
-                    address(this)
-                )
+                abi.encode(EIP712_DOMAIN_TYPEHASH, getChainId(), address(this))
             );
+    }
+
+    function splitSignature(
+        bytes memory signature
+    ) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
+        require(signature.length == 65, "invalid signature length");
+
+        assembly {
+            // first 32 bytes, after the length prefix
+            r := mload(add(signature, 32))
+            // second 32 bytes
+            s := mload(add(signature, 64))
+            // final byte (first byte of the next 32 bytes)
+            v := byte(0, mload(add(signature, 96)))
+        }
+    }
+
+    function generateTransactionHash(
+        bytes32 rootHash
+    ) public view returns (bytes32) {
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                bytes1(0x19),
+                bytes1(0x01),
+                getDomainSeparator(),
+                keccak256(abi.encode(PAYROLL_TX_TYPEHASH, rootHash))
+            )
+        );
+        return digest;
     }
 
     /**
@@ -51,14 +73,24 @@ contract Signature is Storage {
         bytes32 rootHash,
         bytes memory signature
     ) internal view returns (address) {
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                getDomainSeparator(),
-                keccak256(abi.encode(PAYROLL_TX_TYPEHASH, rootHash))
-            )
-        );
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
 
-        return digest.recover(signature);
+        (v, r, s) = splitSignature(signature);
+
+        bytes32 digest = generateTransactionHash(rootHash);
+
+        if (v > 30) {
+            // If v > 30 then default va (27,28) has been adjusted for eth_sign flow
+            // To support eth_sign and similar we adjust v
+            // and hash the messageHash with the Ethereum message prefix before applying recover
+            digest = keccak256(
+                abi.encodePacked("\x19Ethereum Signed Message:\n32", digest)
+            );
+            v -= 4;
+        }
+
+        return digest.recover(v, r, s);
     }
 }
