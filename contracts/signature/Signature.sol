@@ -4,6 +4,9 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "../payroll/Storage.sol";
 
+// Errors
+error InvalidSignatureLength();
+
 contract Signature is Storage {
     using ECDSA for bytes32;
 
@@ -44,7 +47,7 @@ contract Signature is Storage {
     function splitSignature(
         bytes memory signature
     ) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
-        require(signature.length == 65, "invalid signature length");
+        if (signature.length != 65) revert InvalidSignatureLength();
 
         assembly {
             // first 32 bytes, after the length prefix
