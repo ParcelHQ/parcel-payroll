@@ -19,12 +19,6 @@ contract Signature is Storage {
     bytes32 internal constant PAYROLL_TX_TYPEHASH =
         keccak256(bytes("PayrollTx(bytes32 rootHash)"));
 
-    function getChainId() internal view returns (uint256 chainId) {
-        assembly {
-            chainId := chainid()
-        }
-    }
-
     /**
      * @dev get the domain separator
      * @return bytes32 domain separator
@@ -47,7 +41,7 @@ contract Signature is Storage {
                 abi.encode(
                     EIP712_DOMAIN_TYPEHASH,
                     VERSION,
-                    getChainId(),
+                    block.chainid,
                     address(this)
                 )
             );
