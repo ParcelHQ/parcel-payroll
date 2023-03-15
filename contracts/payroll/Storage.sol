@@ -27,7 +27,7 @@ abstract contract Storage {
     // Cached domain separator
     bytes32 _cachedDomainSeparator;
     // Cached chain ID
-    uint256 _cachedChainId;
+    uint256 immutable _cachedChainId = block.chainid;
     // Cached contract address
     address _cachedThis;
 

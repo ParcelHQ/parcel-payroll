@@ -73,7 +73,7 @@ contract Signature is Storage {
                 abi.encode(
                     EIP712_DOMAIN_TYPEHASH,
                     VERSION,
-                    getChainId(),
+                    block.chainid,
                     address(this)
                 )
             );
