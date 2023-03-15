@@ -11,6 +11,7 @@ contract Signature is Storage {
     bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(uint256 chainId,address verifyingContract)");
 
+
     // Payroll Transaction Typehash
     bytes32 internal constant PAYROLL_TX_TYPEHASH =
         keccak256("PayrollTx(bytes32 rootHash)");
