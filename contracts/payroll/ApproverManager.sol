@@ -7,6 +7,7 @@ import "./Storage.sol";
 
 // Errors
 error OnlyApprover();
+error UintOverflow();
 
 contract ApproverManager is Storage, OwnableUpgradeable {
     event AddedApprover(address approver);
@@ -48,6 +49,12 @@ contract ApproverManager is Storage, OwnableUpgradeable {
             currentApprover = approver;
         }
         approvers[currentApprover] = SENTINEL_APPROVER;
+
+        // Added check for safe type casting.
+        if (_approvers.length > type(uint128).max) {
+            revert UintOverflow();
+        }
+
         approverCount = uint128(_approvers.length);
         threshold = _threshold;
     }

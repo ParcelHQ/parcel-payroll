@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 import "./ParcelTransparentProxy.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
-interface OrganizerInterface {
+interface IOrganizer {
     function initialize(
         address[] calldata _approvers,
         uint128 approvalsRequired
@@ -16,13 +16,14 @@ interface OrganizerInterface {
 contract ParcelPayrollFactory is Ownable2Step {
     address public logic;
     address public immutable addressRegistry;
+    bytes proxyCreationCode;
 
     event LogicAddressChanged(
         address indexed oldLogicAddress,
         address indexed newLogicAddress
     );
 
-    mapping(address => address) public getParcelAddress;
+    mapping(address => address) public parcelAddress;
 
     event OrgOnboarded(
         address safeAddress,
@@ -37,6 +38,7 @@ contract ParcelPayrollFactory is Ownable2Step {
 
         logic = _logic;
         addressRegistry = _addressRegistry;
+        proxyCreationCode = type(ParcelTransparentProxy).creationCode;
     }
 
     function computeAddress(
@@ -46,13 +48,13 @@ contract ParcelPayrollFactory is Ownable2Step {
         address safeAddress
     ) public view returns (address) {
         bytes memory _data = abi.encodeCall(
-            OrganizerInterface.initialize,
+            IOrganizer.initialize,
             (_approvers, approvalsRequired)
         );
 
         address predictedAddress = address(
             uint160(
-                uint(
+                uint256(
                     keccak256(
                         abi.encodePacked(
                             bytes1(0xff),
@@ -60,7 +62,7 @@ contract ParcelPayrollFactory is Ownable2Step {
                             salt,
                             keccak256(
                                 abi.encodePacked(
-                                    type(ParcelTransparentProxy).creationCode,
+                                    proxyCreationCode,
                                     abi.encode(
                                         logic,
                                         safeAddress,
@@ -80,14 +82,12 @@ contract ParcelPayrollFactory is Ownable2Step {
     function onboard(
         bytes32 salt,
         address[] calldata _approvers,
-        uint128 approvalsRequired,
-        address safeAddress
+        uint128 approvalsRequired
     ) public {
-        require(getParcelAddress[msg.sender] == address(0), "CS020");
-        require(msg.sender == safeAddress, "CS010");
+        require(parcelAddress[msg.sender] == address(0), "CS020");
 
         bytes memory _data = abi.encodeCall(
-            OrganizerInterface.initialize,
+            IOrganizer.initialize,
             (_approvers, approvalsRequired)
         );
 
@@ -95,22 +95,22 @@ contract ParcelPayrollFactory is Ownable2Step {
             salt,
             _approvers,
             approvalsRequired,
-            safeAddress
+            msg.sender
         );
 
         ParcelTransparentProxy proxy = new ParcelTransparentProxy{salt: salt}(
             logic,
-            safeAddress,
+            msg.sender,
             _data,
             addressRegistry
         );
 
-        OrganizerInterface(address(proxy)).transferOwnership(safeAddress);
+        IOrganizer(address(proxy)).transferOwnership(msg.sender);
 
         require(address(proxy) == predictedAddress);
 
-        getParcelAddress[safeAddress] = address(proxy);
-        emit OrgOnboarded(safeAddress, address(proxy), predictedAddress, _data);
+        parcelAddress[msg.sender] = address(proxy);
+        emit OrgOnboarded(msg.sender, address(proxy), predictedAddress, _data);
     }
 
     function setNewImplementationAddress(address _logic) public onlyOwner {

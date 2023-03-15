@@ -21,7 +21,7 @@ contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
     );
 
     constructor() {
-        // Enable the Singleton contract to be initialized
+        // So that the contract cannot be initialized again and become singleton
         _disableInitializers();
     }
 
@@ -50,7 +50,7 @@ contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
     function sweep(address tokenAddress) external nonReentrant onlyOwner {
         if (tokenAddress == address(0)) {
             // Transfer ether
-            (bool sent, bytes memory data) = address(msg.sender).call{
+            (bool sent, bytes memory data) = msg.sender.call{
                 value: address(this).balance
             }("");
 
