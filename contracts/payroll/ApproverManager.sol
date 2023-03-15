@@ -21,47 +21,6 @@ contract ApproverManager is Storage, OwnableUpgradeable {
     event ChangedThreshold(uint256 threshold);
 
     /**
-     * @notice Sets the initial storage of the contract.
-     * @param _approvers List of Org approvers.
-     * @param _threshold Number of required confirmations for a Org transaction.
-     */
-    function setupApprovers(
-        address[] calldata _approvers,
-        uint128 _threshold
-    ) internal {
-        // Threshold can only be 0 at initialization.
-        // Check ensures that setup function can only be called once.
-        if (threshold != 0) revert DuplicateCallToSetupFunction();
-        // Validate that threshold is less than or equal to number of added approvers.
-        if (_threshold > _approvers.length)
-            revert ThresholdTooHigh(_threshold, _approvers.length);
-        // There has to be at least one Org approver.
-        if (_threshold < 1) revert ThresholdTooLow(_threshold);
-        // Initializing Org approvers.
-        address currentApprover = SENTINEL_APPROVER;
-        for (uint256 i = 0; i < _approvers.length; i++) {
-            // Approver address cannot be null.
-            address approver = _approvers[i];
-            if (
-                approver == address(0) ||
-                approver == SENTINEL_APPROVER ||
-                approver == address(this) ||
-                approver == owner()
-            ) revert InvalidAddressProvided(approver);
-
-            if (
-                currentApprover == approver || approvers[approver] != address(0)
-            ) revert DuplicateAddressProvided(approver);
-
-            approvers[currentApprover] = approver;
-            currentApprover = approver;
-        }
-        approvers[currentApprover] = SENTINEL_APPROVER;
-        approverCount = uint128(_approvers.length);
-        threshold = _threshold;
-    }
-
-    /**
      * @notice Adds the approver `approver` to the Org and updates the threshold to `_threshold`.
      * @dev This can only be done via a Org transaction.
      * @param approver New approver address.
@@ -202,5 +161,46 @@ contract ApproverManager is Storage, OwnableUpgradeable {
             index++;
         }
         return array;
+    }
+
+    /**
+     * @notice Sets the initial storage of the contract.
+     * @param _approvers List of Org approvers.
+     * @param _threshold Number of required confirmations for a Org transaction.
+     */
+    function setupApprovers(
+        address[] calldata _approvers,
+        uint128 _threshold
+    ) internal {
+        // Threshold can only be 0 at initialization.
+        // Check ensures that setup function can only be called once.
+        if (threshold != 0) revert DuplicateCallToSetupFunction();
+        // Validate that threshold is less than or equal to number of added approvers.
+        if (_threshold > _approvers.length)
+            revert ThresholdTooHigh(_threshold, _approvers.length);
+        // There has to be at least one Org approver.
+        if (_threshold < 1) revert ThresholdTooLow(_threshold);
+        // Initializing Org approvers.
+        address currentApprover = SENTINEL_APPROVER;
+        for (uint256 i = 0; i < _approvers.length; i++) {
+            // Approver address cannot be null.
+            address approver = _approvers[i];
+            if (
+                approver == address(0) ||
+                approver == SENTINEL_APPROVER ||
+                approver == address(this) ||
+                approver == owner()
+            ) revert InvalidAddressProvided(approver);
+
+            if (
+                currentApprover == approver || approvers[approver] != address(0)
+            ) revert DuplicateAddressProvided(approver);
+
+            approvers[currentApprover] = approver;
+            currentApprover = approver;
+        }
+        approvers[currentApprover] = SENTINEL_APPROVER;
+        approverCount = uint128(_approvers.length);
+        threshold = _threshold;
     }
 }
