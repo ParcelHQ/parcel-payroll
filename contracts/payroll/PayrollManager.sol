@@ -135,22 +135,28 @@ contract PayrollManager is
             // Transfer the funds to the recipient (to) addresses
             if (isApproved[i]) {
                 if (tokenAddress[i] == address(0)) {
-                    packPayoutNonce(payoutNonce[i]);
                     // Transfer Native tokens
                     (bool sent, bytes memory data) = to[i].call{
                         value: amount[i]
                     }("");
 
-                    if (!sent)
+                    if (!sent) {
                         emit PayoutFailed(
                             address(0),
                             to[i],
                             amount[i],
                             payoutNonce[i]
                         );
+                    } else {
+                        packPayoutNonce(payoutNonce[i]);
+                        emit PayoutSuccessful(
+                            address(0),
+                            to[i],
+                            amount[i],
+                            payoutNonce[i]
+                        );
+                    }
                 } else {
-                    packPayoutNonce(payoutNonce[i]);
-
                     // Transfer ERC20 tokens
                     try
                         IERC20Upgradeable(tokenAddress[i]).safeTransfer(
@@ -158,6 +164,7 @@ contract PayrollManager is
                             amount[i]
                         )
                     {
+                        packPayoutNonce(payoutNonce[i]);
                         emit PayoutSuccessful(
                             tokenAddress[i],
                             to[i],
