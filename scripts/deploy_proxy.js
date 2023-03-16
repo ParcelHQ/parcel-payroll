@@ -7,17 +7,19 @@
 const hre = require("hardhat");
 
 async function main() {
-    const ParcelPayrollFactory = await hre.ethers.getContractFactory(
-        "ParcelPayrollFactory"
+    const ParcelTransparentProxy = await hre.ethers.getContractFactory(
+        "ParcelTransparentProxy"
     );
-    const factory = await ParcelPayrollFactory.deploy(
-        "0x8E8205261A561630755E3395aC4a27288532BdB1",
+    const proxy = await ParcelTransparentProxy.deploy(
+        "0x3B09Dbc8CA1eBac0CDe743C3A68c2b2d376Df0fa",
+        "0xd97eEe2c1FD746c55B37Ffe93Cf1b0655fC3C397",
+        "0x",
         "0xd97eEe2c1FD746c55B37Ffe93Cf1b0655fC3C397"
     );
 
-    await factory.deployed();
+    await proxy.deployed();
 
-    console.log(`ParcelPayrollFactory is Deployed to ${factory.address}`);
+    console.log(`Parcel Proxy is Deployed to ${proxy.address}`);
     // Latest Deployed Factory Address is : 0x32ABb4fB5a1Df789B5Df426f6Fe1cB55Cf20d927
 }
 

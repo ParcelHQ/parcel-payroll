@@ -129,6 +129,14 @@ contract PayrollManager is
                     tokenFlagAmountToFetch = tokenFlagAmountToFetch + amount[i];
                 }
             }
+
+            if (i == to.length - 1 && tokenFlagAmountToFetch > 0) {
+                // Fetch the flag token from Gnosis
+                execTransactionFromGnosis(
+                    tokenFlag,
+                    uint96(tokenFlagAmountToFetch)
+                );
+            }
         }
 
         // Loop through the approvals

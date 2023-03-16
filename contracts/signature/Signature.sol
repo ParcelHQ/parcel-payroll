@@ -55,16 +55,6 @@ contract Signature is Storage {
     }
 
     /**
-     * @dev get the chain id
-     * @return chainId chain id
-     */
-    function getChainId() internal view returns (uint256 chainId) {
-        assembly {
-            chainId := chainid()
-        }
-    }
-
-    /**
      * @dev get the domain separator
      * @return bytes32 domain separator
      */
@@ -72,7 +62,7 @@ contract Signature is Storage {
         if (address(this) == _cachedThis && block.chainid == _cachedChainId) {
             return _cachedDomainSeparator;
         } else {
-            return _buildDomainSeparator();
+            return _buildDomainSeparator(address(this));
         }
     }
 
@@ -80,16 +70,11 @@ contract Signature is Storage {
      * @dev Build the domain separator
      * @return bytes32 domain separator
      */
-    function _buildDomainSeparator() internal view returns (bytes32) {
+    function _buildDomainSeparator(
+        address proxy
+    ) internal view returns (bytes32) {
         return
-            keccak256(
-                abi.encode(
-                    EIP712_DOMAIN_TYPEHASH,
-                    VERSION,
-                    block.chainid,
-                    address(this)
-                )
-            );
+            keccak256(abi.encode(EIP712_DOMAIN_TYPEHASH, block.chainid, proxy));
     }
 
     function splitSignature(
