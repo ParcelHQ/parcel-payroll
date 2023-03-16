@@ -134,6 +134,14 @@ contract ParcelTransparentProxy is ERC1967Proxy {
      * the functions that are present in the implementation address, the ifAdmin() modifier will forward those
      * functions in the implementation address via the _fallback() function.
      */
+
+    /**
+     * @dev Fallback function.
+     *
+     * override to remove _fallback() function
+     */
+    receive() external payable override {}
+
     function upgradeToAndCall(
         address newImplementation,
         bytes calldata data
