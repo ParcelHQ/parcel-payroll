@@ -7,12 +7,19 @@
 const hre = require("hardhat");
 
 async function main() {
-    const Organizer = await hre.ethers.getContractFactory("Organizer");
-    const organizer = await Organizer.deploy();
+    const ParcelPayroll = await hre.ethers.getContractFactory("ParcelPayroll", {
+        libraries: {
+            // This is the Library Address for the SafeERC20Upgradeable Library
+            SafeERC20Upgradeable: "0x1dcEE354125E0C8f8e0272DA87747bF23990B6b7",
+        },
+    });
+    const payroll = await ParcelPayroll.deploy();
 
-    await organizer.deployed();
+    await payroll.deployed();
 
-    console.log(`ParcelPayrollFactory is Deployed to ${organizer.address}`);
+    console.log(`ParcelPayrollFactory is Deployed to ${payroll.address}`);
+
+    // Latest Deployed Implementation is at : 0x3B09Dbc8CA1eBac0CDe743C3A68c2b2d376Df0fa
 }
 
 // We recommend this pattern to be able to use async/await everywhere

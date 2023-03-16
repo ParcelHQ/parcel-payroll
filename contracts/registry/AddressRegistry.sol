@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
@@ -9,8 +9,16 @@ interface IAddressRegistry {
     ) external view returns (bool);
 }
 
+// Errors
+error InvalidImplementationProvided(address implementation);
+
 contract AddressRegistry is Ownable2Step {
     mapping(address => bool) internal parcelWhitelistedImplementation;
+
+    event ImplementationWhitelisted(
+        address indexed implementation,
+        bool isActive
+    );
 
     constructor() Ownable2Step() {}
 
@@ -18,17 +26,19 @@ contract AddressRegistry is Ownable2Step {
         address _implementation,
         bool isActive
     ) external onlyOwner {
-        require(
-            _implementation != address(0) &&
-                _implementation != address(this) &&
-                _implementation != owner(),
-            "CS001"
-        );
+        if (
+            _implementation == address(0) ||
+            _implementation == address(this) ||
+            _implementation == owner()
+        ) revert InvalidImplementationProvided(_implementation);
 
         parcelWhitelistedImplementation[_implementation] = isActive;
+        emit ImplementationWhitelisted(_implementation, isActive);
     }
 
-    function isWhitelisted(address _implementation) public view returns (bool) {
+    function isWhitelisted(
+        address _implementation
+    ) external view returns (bool) {
         return parcelWhitelistedImplementation[_implementation];
     }
 }
