@@ -53,6 +53,7 @@ contract PayrollManager is
      * @param proof Merkle proof of the payroll transaction hashes
      * @param roots Merkle roots of the payroll transaction hashes
      * @param signatures Signatures of the payroll transaction hashes
+     * @notice In a Batch of payouts, if one payout fails, the rest of the batch is continued after emitting the PayoutFailed event. In this case, the amount of the failed payout is left on the contract. The sweep function can be used to return the failed payout amount to the org safe in a separate transaction.
      */
     function executePayroll(
         address[] memory to,
