@@ -148,8 +148,4 @@ contract ParcelTransparentProxy is ERC1967Proxy {
     function _admin() internal view virtual returns (address) {
         return _getAdmin();
     }
-
-    /**
-     * @dev Makes sure the admin cannot access the fallback function. See {Proxy-_beforeFallback}.
-     */
 }
