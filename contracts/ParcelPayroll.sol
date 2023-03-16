@@ -51,7 +51,7 @@ contract ParcelPayroll is UUPSUpgradeable, ApproverManager, PayrollManager {
         __ReentrancyGuard_init();
         __UUPSUpgradeable_init();
 
-        _cachedDomainSeparator = _buildDomainSeparator();
+        _cachedDomainSeparator = _buildDomainSeparator(address(this));
         _cachedThis = address(this);
 
         setupApprovers(_approvers, approvalsRequired);

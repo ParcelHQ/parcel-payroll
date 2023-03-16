@@ -7,18 +7,19 @@
 const hre = require("hardhat");
 
 async function main() {
-    const ParcelPayrollFactory = await hre.ethers.getContractFactory(
-        "ParcelPayrollFactory"
+    const SafeERC20Upgradeable = await hre.ethers.getContractFactory(
+        "SafeERC20Upgradeable"
     );
-    const factory = await ParcelPayrollFactory.deploy(
-        "0x8E8205261A561630755E3395aC4a27288532BdB1",
-        "0xd97eEe2c1FD746c55B37Ffe93Cf1b0655fC3C397"
+    const safeERC20Library = await SafeERC20Upgradeable.deploy();
+
+    await safeERC20Library.deployed();
+
+    console.log(
+        `SafeERC20Upgradeable is Deployed to ${safeERC20Library.address}`
     );
 
-    await factory.deployed();
-
-    console.log(`ParcelPayrollFactory is Deployed to ${factory.address}`);
-    // Latest Deployed Factory Address is : 0x32ABb4fB5a1Df789B5Df426f6Fe1cB55Cf20d927
+    // Note: We are using the same address as the one used in the ParcelPayrollFactory
+    // Deployed Goerli Address : 0x1dcEE354125E0C8f8e0272DA87747bF23990B6b7
 }
 
 // We recommend this pattern to be able to use async/await everywhere
