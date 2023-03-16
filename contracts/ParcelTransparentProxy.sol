@@ -140,7 +140,6 @@ contract ParcelTransparentProxy is ERC1967Proxy {
      *
      * override to remove _fallback() function
      */
-    receive() external payable override {}
 
     function upgradeToAndCall(
         address newImplementation,
@@ -159,10 +158,4 @@ contract ParcelTransparentProxy is ERC1967Proxy {
     /**
      * @dev Makes sure the admin cannot access the fallback function. See {Proxy-_beforeFallback}.
      */
-    function _beforeFallback() internal virtual override {
-        if (msg.sender == _getAdmin())
-            revert ProxyAdminCannotFallbackToProxyTarget();
-
-        super._beforeFallback();
-    }
 }
