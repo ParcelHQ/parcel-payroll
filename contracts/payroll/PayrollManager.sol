@@ -26,8 +26,18 @@ contract PayrollManager is
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // Events
-    event TransferSuccessful(address tokenAddress, address to, uint256 amount);
-    event TransferFailed(address tokenAddress, address to, uint256 amount);
+    event PayoutSuccessful(
+        address tokenAddress,
+        address to,
+        uint256 amount,
+        uint payoutNonce
+    );
+    event PayoutFailed(
+        address tokenAddress,
+        address to,
+        uint256 amount,
+        uint payoutNonce
+    );
 
     /**
      * @dev Receive Native tokens
@@ -52,13 +62,7 @@ contract PayrollManager is
         bytes32[][][] memory proof,
         bytes32[] memory roots,
         bytes[] memory signatures
-    )
-        external
-        // address[] memory paymentTokens,
-        // uint96[] memory payoutAmounts
-        nonReentrant
-        whenNotPaused
-    {
+    ) external nonReentrant whenNotPaused {
         // Validate the Input Data
 
         if (
@@ -138,7 +142,12 @@ contract PayrollManager is
                     }("");
 
                     if (!sent)
-                        emit TransferFailed(address(0), to[i], amount[i]);
+                        emit PayoutFailed(
+                            address(0),
+                            to[i],
+                            amount[i],
+                            payoutNonce[i]
+                        );
                 } else {
                     packPayoutNonce(payoutNonce[i]);
 
@@ -149,13 +158,19 @@ contract PayrollManager is
                             amount[i]
                         )
                     {
-                        emit TransferSuccessful(
+                        emit PayoutSuccessful(
                             tokenAddress[i],
                             to[i],
-                            amount[i]
+                            amount[i],
+                            payoutNonce[i]
                         );
                     } catch {
-                        emit TransferFailed(tokenAddress[i], to[i], amount[i]);
+                        emit PayoutFailed(
+                            tokenAddress[i],
+                            to[i],
+                            amount[i],
+                            payoutNonce[i]
+                        );
                     }
                 }
             }
