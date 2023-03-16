@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
+import "../library/SafeERC20Upgradeable.sol";
 import "../interfaces/IAllowanceModule.sol";
 import "../signature/Signature.sol";
 
@@ -15,7 +15,6 @@ error InvalidPayoutSignature(bytes signature);
 error PayrollDataLengthMismatch();
 error RootSignatureLengthMismatch();
 error PaymentTokenLengthMismatch();
-error TransferFailed(address tokenAddress, uint256 amount);
 error TokensLeftInContract(address tokenAddress);
 
 contract PayrollManager is
@@ -25,6 +24,10 @@ contract PayrollManager is
     PausableUpgradeable
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+
+    // Events
+    event TransferSuccessful(address tokenAddress, address to, uint256 amount);
+    event TransferFailed(address tokenAddress, address to, uint256 amount);
 
     /**
      * @dev Receive Native tokens
@@ -57,7 +60,7 @@ contract PayrollManager is
         whenNotPaused
     {
         // Validate the Input Data
-        
+
         if (
             to.length != tokenAddress.length ||
             to.length != amount.length ||
@@ -66,7 +69,6 @@ contract PayrollManager is
 
         if (roots.length != signatures.length)
             revert RootSignatureLengthMismatch();
-
 
         validateSignatures(roots, signatures);
 
@@ -135,14 +137,26 @@ contract PayrollManager is
                         value: amount[i]
                     }("");
 
-                    if (!sent) revert TransferFailed(address(0), amount[i]);
+                    if (!sent)
+                        emit TransferFailed(address(0), to[i], amount[i]);
                 } else {
                     packPayoutNonce(payoutNonce[i]);
+
                     // Transfer ERC20 tokens
-                    IERC20Upgradeable(tokenAddress[i]).safeTransfer(
-                        to[i],
-                        amount[i]
-                    );
+                    try
+                        IERC20Upgradeable(tokenAddress[i]).safeTransfer(
+                            to[i],
+                            amount[i]
+                        )
+                    {
+                        emit TransferSuccessful(
+                            tokenAddress[i],
+                            to[i],
+                            amount[i]
+                        );
+                    } catch {
+                        emit TransferFailed(tokenAddress[i], to[i], amount[i]);
+                    }
                 }
             }
         }
