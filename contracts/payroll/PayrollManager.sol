@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
+import "../library/SafeERC20Upgradeable.sol";
 import "../interfaces/IAllowanceModule.sol";
 import "../signature/Signature.sol";
 
@@ -15,7 +15,6 @@ error InvalidPayoutSignature(bytes signature);
 error PayrollDataLengthMismatch();
 error RootSignatureLengthMismatch();
 error PaymentTokenLengthMismatch();
-error TransferFailed(address tokenAddress, uint256 amount);
 error TokensLeftInContract(address tokenAddress);
 
 contract PayrollManager is
@@ -25,6 +24,20 @@ contract PayrollManager is
     PausableUpgradeable
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+
+    // Events
+    event PayoutSuccessful(
+        address tokenAddress,
+        address to,
+        uint256 amount,
+        uint payoutNonce
+    );
+    event PayoutFailed(
+        address tokenAddress,
+        address to,
+        uint256 amount,
+        uint payoutNonce
+    );
 
     /**
      * @dev Receive Native tokens
@@ -40,6 +53,7 @@ contract PayrollManager is
      * @param proof Merkle proof of the payroll transaction hashes
      * @param roots Merkle roots of the payroll transaction hashes
      * @param signatures Signatures of the payroll transaction hashes
+     * @notice In a Batch of payouts, if one payout fails, the rest of the batch is continued after emitting the PayoutFailed event. In this case, the amount of the failed payout is left on the contract. The sweep function can be used to return the failed payout amount to the org safe in a separate transaction.
      */
     function executePayroll(
         address[] memory to,
@@ -49,15 +63,9 @@ contract PayrollManager is
         bytes32[][][] memory proof,
         bytes32[] memory roots,
         bytes[] memory signatures
-    )
-        external
-        // address[] memory paymentTokens,
-        // uint96[] memory payoutAmounts
-        nonReentrant
-        whenNotPaused
-    {
+    ) external nonReentrant whenNotPaused {
         // Validate the Input Data
-        
+
         if (
             to.length != tokenAddress.length ||
             to.length != amount.length ||
@@ -66,7 +74,6 @@ contract PayrollManager is
 
         if (roots.length != signatures.length)
             revert RootSignatureLengthMismatch();
-
 
         validateSignatures(roots, signatures);
 
@@ -129,20 +136,50 @@ contract PayrollManager is
             // Transfer the funds to the recipient (to) addresses
             if (isApproved[i]) {
                 if (tokenAddress[i] == address(0)) {
-                    packPayoutNonce(payoutNonce[i]);
                     // Transfer Native tokens
                     (bool sent, bytes memory data) = to[i].call{
                         value: amount[i]
                     }("");
 
-                    if (!sent) revert TransferFailed(address(0), amount[i]);
+                    if (!sent) {
+                        emit PayoutFailed(
+                            address(0),
+                            to[i],
+                            amount[i],
+                            payoutNonce[i]
+                        );
+                    } else {
+                        packPayoutNonce(payoutNonce[i]);
+                        emit PayoutSuccessful(
+                            address(0),
+                            to[i],
+                            amount[i],
+                            payoutNonce[i]
+                        );
+                    }
                 } else {
-                    packPayoutNonce(payoutNonce[i]);
                     // Transfer ERC20 tokens
-                    IERC20Upgradeable(tokenAddress[i]).safeTransfer(
-                        to[i],
-                        amount[i]
-                    );
+                    try
+                        IERC20Upgradeable(tokenAddress[i]).safeTransfer(
+                            to[i],
+                            amount[i]
+                        )
+                    {
+                        packPayoutNonce(payoutNonce[i]);
+                        emit PayoutSuccessful(
+                            tokenAddress[i],
+                            to[i],
+                            amount[i],
+                            payoutNonce[i]
+                        );
+                    } catch {
+                        emit PayoutFailed(
+                            tokenAddress[i],
+                            to[i],
+                            amount[i],
+                            payoutNonce[i]
+                        );
+                    }
                 }
             }
         }

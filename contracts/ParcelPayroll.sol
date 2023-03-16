@@ -8,12 +8,21 @@ import "./payroll/PayrollManager.sol";
 
 // Errors
 error CannotRenounceOwnership();
+error SweepFailed(address tokenAddress, uint256 amount);
 
-/// @title Organizer - A utility smart contract for Orgs to define and manage their Organizational structure.
-/// @author Sriram Kasyap Meduri - <sriram@parcel.money>
-/// @author Krishna Kant Sharma - <krishna@parcel.money>
+/**
+ * @title ParcelPayroll
+ * @dev ParcelPayroll is a secure and decentralized smart contract designed to help organizations pay their contributors with ease and efficiency. The contract utilizes a dedicated approval team, removing the reliance on the organization's multisig, which helps to streamline the payment process and ensure secure payments.
+ *
+ * One of the key features of ParcelPayroll is its ability to improve approver coordination. Approvers can approve payouts in non-aligned batches, meaning they don't all need to approve the same payouts at the same time. This feature saves time and resources for the organization, as approvers can approve payouts when they are available, rather than being constrained by a strict schedule.
+ *
+ * With ParcelPayroll, organizations can automate their payment processes, reducing the risk of errors and increasing efficiency. The contract's decentralized architecture ensures that all transactions are transparent and auditable, adding an extra layer of security to the payment process.
+ *
+ * @author Sriram Kasyap Meduri - <sriram@parcel.money>
+ * @author Krishna Kant Sharma - <krishna@parcel.money>
+ */
 
-contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
+contract ParcelPayroll is UUPSUpgradeable, ApproverManager, PayrollManager {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     //  Events
@@ -53,19 +62,28 @@ contract Organizer is UUPSUpgradeable, ApproverManager, PayrollManager {
      * @dev Sweep the contract balance
      * @param tokenAddress - Address of the token to sweep
      */
-    function sweep(address tokenAddress) external nonReentrant onlyOwner {
+    function sweep(address tokenAddress) external nonReentrant {
         if (tokenAddress == address(0)) {
             // Transfer native tokens
             (bool sent, bytes memory data) = msg.sender.call{
                 value: address(this).balance
             }("");
 
-            if (!sent) revert TransferFailed(address(0), address(this).balance);
+            if (!sent) revert SweepFailed(address(0), address(this).balance);
         } else {
-            IERC20Upgradeable(tokenAddress).safeTransfer(
-                msg.sender,
-                IERC20Upgradeable(tokenAddress).balanceOf(address(this))
-            );
+            try
+                IERC20Upgradeable(tokenAddress).safeTransfer(
+                    msg.sender,
+                    IERC20Upgradeable(tokenAddress).balanceOf(address(this))
+                )
+            {
+                // Transfer ERC20 tokens
+            } catch {
+                revert SweepFailed(
+                    tokenAddress,
+                    IERC20Upgradeable(tokenAddress).balanceOf(address(this))
+                );
+            }
         }
     }
 
