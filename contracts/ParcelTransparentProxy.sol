@@ -135,12 +135,6 @@ contract ParcelTransparentProxy is ERC1967Proxy {
      * functions in the implementation address via the _fallback() function.
      */
 
-    /**
-     * @dev Fallback function.
-     *
-     * override to remove _fallback() function
-     */
-
     function upgradeToAndCall(
         address newImplementation,
         bytes calldata data
