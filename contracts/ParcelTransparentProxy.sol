@@ -113,10 +113,12 @@ contract ParcelTransparentProxy is ERC1967Proxy {
      * @dev Upgrade the implementation of the proxy.
      *
      * NOTE: Only the admin can call this function. See {ProxyAdmin-upgrade}.
+     * NOTE: If there is a collision with `upgradeTo()` it won't be able to receive `ETH`, however this collision doesn't occur in practice.
      * @param newImplementation Address of the new implementation.
      * If a signature collision exists between the ifAdmin functions (such as the upgradeToAndCall function) and
      * the functions that are present in the implementation address, the ifAdmin() modifier will forward those
      * functions in the implementation address via the _fallback() function.
+     *
      */
     function upgradeTo(
         address newImplementation
@@ -130,6 +132,7 @@ contract ParcelTransparentProxy is ERC1967Proxy {
      * proxied contract.
      *
      * NOTE: Only the admin can call this function. See {ProxyAdmin-upgradeAndCall}.
+     * NOTE: If there is a collision with `upgradeToAndCall()` it won't be able to receive `ETH`, however this collision doesn't occur in practice.
      * If a signature collision exists between the ifAdmin functions (such as the upgradeToAndCall function) and
      * the functions that are present in the implementation address, the ifAdmin() modifier will forward those
      * functions in the implementation address via the _fallback() function.
