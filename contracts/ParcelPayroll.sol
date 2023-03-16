@@ -62,7 +62,7 @@ contract ParcelPayroll is UUPSUpgradeable, ApproverManager, PayrollManager {
      * @dev Sweep the contract balance
      * @param tokenAddress - Address of the token to sweep
      */
-    function sweep(address tokenAddress) external nonReentrant onlyOwner {
+    function sweep(address tokenAddress) external nonReentrant {
         if (tokenAddress == address(0)) {
             // Transfer native tokens
             (bool sent, bytes memory data) = msg.sender.call{
