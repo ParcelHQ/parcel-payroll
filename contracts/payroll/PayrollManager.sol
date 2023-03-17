@@ -200,10 +200,10 @@ contract PayrollManager is
      */
     function getPayoutNonce(uint256 payoutNonce) public view returns (bool) {
         // Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
-        uint256 slotIndex = payoutNonce / 256;
+        uint256 slotIndex = uint248(payoutNonce >> 8);
 
         // The bit index of the uint256 is the payout nonce % 256 (0-255)
-        uint256 bitIndex = payoutNonce % 256;
+        uint256 bitIndex = uint8(payoutNonce);
 
         //  If the slot is greater than the length of the array, the payout nonce has not been used
         if (packedPayoutNonces.length <= slotIndex) {
