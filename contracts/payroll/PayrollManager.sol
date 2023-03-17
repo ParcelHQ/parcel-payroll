@@ -5,8 +5,8 @@ import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgrad
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "../library/SafeERC20Upgradeable.sol";
 import "../interfaces/IAllowanceModule.sol";
 import "../signature/Signature.sol";
 
@@ -18,6 +18,7 @@ error PaymentTokenLengthMismatch();
 error TokensLeftInContract(address tokenAddress);
 error PayoutNonceAlreadyExecuted(uint64 nonce);
 error TokensNotSorted(address tokenAddress1, address tokenAddress2);
+error UnauthorizedTransfer();
 
 contract PayrollManager is
     Signature,
@@ -45,6 +46,16 @@ contract PayrollManager is
      * @dev Receive Native tokens
      */
     receive() external payable {}
+
+    function safeTransferExternal(
+        IERC20Upgradeable token,
+        address to,
+        uint256 amount
+    ) external {
+        if (msg.sender != address(this)) revert UnauthorizedTransfer();
+
+        token.safeTransfer(to, amount);
+    }
 
     /**
      * @dev Validate the payroll transaction hashes and execute the payroll
@@ -183,7 +194,8 @@ contract PayrollManager is
                 } else {
                     // Transfer ERC20 tokens
                     try
-                        IERC20Upgradeable(tokenAddress[i]).safeTransfer(
+                        this.safeTransferExternal(
+                            IERC20Upgradeable(tokenAddress[i]),
                             to[i],
                             amount[i]
                         )
