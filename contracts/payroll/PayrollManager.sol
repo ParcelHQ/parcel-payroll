@@ -134,8 +134,10 @@ contract PayrollManager is
                     );
                     // Set the flag token address to the current token address
                     tokenFlag = tokenAddress[i];
+                    // Reset the flag token amount to fetch
                     tokenFlagAmountToFetch = 0;
                 }
+                // Add the current payout amount to the flag token amount to fetch
                 tokenFlagAmountToFetch = tokenFlagAmountToFetch + amount[i];
             }
 
