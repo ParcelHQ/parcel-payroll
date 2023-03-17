@@ -3,6 +3,7 @@ pragma solidity 0.8.17;
 
 abstract contract Storage {
     string public constant VERSION = "0.0.1";
+    string constant NAME = "Parcel Payroll";
     address internal constant SENTINEL_APPROVER = address(0x1);
     address constant ALLOWANCE_MODULE =
         0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134;
