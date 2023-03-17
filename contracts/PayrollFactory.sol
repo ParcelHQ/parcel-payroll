@@ -169,7 +169,7 @@ contract ParcelPayrollFactory is Ownable2Step {
      * @param _logic - Address of the new logic contract
      */
     function setNewImplementationAddress(address _logic) public onlyOwner {
-        if (_logic == address(0) || _logic != logic)
+        if (_logic == address(0) || _logic == logic)
             revert InvalidLogicAddressProvided(_logic);
 
         emit LogicAddressChanged(logic, _logic);
