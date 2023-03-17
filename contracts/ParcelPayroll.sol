@@ -65,7 +65,7 @@ contract ParcelPayroll is UUPSUpgradeable, ApproverManager, PayrollManager {
     function sweep(address tokenAddress) external nonReentrant {
         if (tokenAddress == address(0)) {
             // Transfer native tokens
-            (bool sent, bytes memory data) = msg.sender.call{
+            (bool sent, bytes memory data) = owner().call{
                 value: address(this).balance
             }("");
 
@@ -73,7 +73,7 @@ contract ParcelPayroll is UUPSUpgradeable, ApproverManager, PayrollManager {
         } else {
             try
                 IERC20Upgradeable(tokenAddress).safeTransfer(
-                    msg.sender,
+                    owner(),
                     IERC20Upgradeable(tokenAddress).balanceOf(address(this))
                 )
             {
