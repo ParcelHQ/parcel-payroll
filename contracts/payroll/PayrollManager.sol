@@ -16,6 +16,7 @@ error PayrollDataLengthMismatch();
 error RootSignatureLengthMismatch();
 error PaymentTokenLengthMismatch();
 error TokensLeftInContract(address tokenAddress);
+error PayoutNonceAlreadyExecuted(uint64 nonce);
 
 contract PayrollManager is
     Signature,
@@ -88,6 +89,10 @@ contract PayrollManager is
 
         // Loop through the payouts
         for (uint256 i = 0; i < to.length; i++) {
+            // Revert if the payout nonce has already been executed
+            if (getPayoutNonce(payoutNonce[i]))
+                revert PayoutNonceAlreadyExecuted(payoutNonce[i]);
+
             // Generate the leaf from the payout data
             bytes32 leaf = encodeTransactionData(
                 to[i],
@@ -100,9 +105,14 @@ contract PayrollManager is
             uint256 approvals;
 
             // Loop through the roots
-            for (uint256 j = 0; j < roots.length; j++) {
+            for (
+                uint256 j = 0;
+                j < roots.length && approvals < threshold;
+                j++
+            ) {
                 // Verify the root has been validated
                 // Verify the proof against the current root and increment the approvals counter
+
                 if (
                     MerkleProofUpgradeable.verify(proof[i][j], roots[j], leaf)
                 ) {
@@ -111,7 +121,7 @@ contract PayrollManager is
             }
 
             // Check if the approvals are greater than or equal to the required approvals
-            if (approvals >= threshold && !getPayoutNonce(payoutNonce[i])) {
+            if (approvals >= threshold) {
                 // Set the approval to true
                 isApproved[i] = true;
 
