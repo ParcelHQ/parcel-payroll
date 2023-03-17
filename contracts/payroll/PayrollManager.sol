@@ -153,7 +153,7 @@ contract PayrollManager is
         // Loop through the approvals
         for (uint i = 0; i < isApproved.length; i++) {
             // Transfer the funds to the recipient (to) addresses
-            if (isApproved[i]) {
+            if (isApproved[i] && !getPayoutNonce(payoutNonce[i])) {
                 if (tokenAddress[i] == address(0)) {
                     // Transfer Native tokens
                     (bool sent, bytes memory data) = to[i].call{
