@@ -321,6 +321,10 @@ contract PayrollManager is
         } else {
             contractBalance = address(this).balance;
         }
+
+        // If the contract balance is greater than the amount, no need to fetch more tokens from safe
+        if (contractBalance >= amount) return;
+
         // Execute payout via allowance module
         // Fetch amount is the difference between the flag token amount to fetch and the current token balance
         IAllowanceModule(ALLOWANCE_MODULE).executeAllowanceTransfer(
