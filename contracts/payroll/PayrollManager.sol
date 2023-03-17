@@ -144,7 +144,7 @@ contract PayrollManager is
                     tokenFlagAmountToFetch = 0;
                 }
                 // Add the current payout amount to the flag token amount to fetch
-                tokenFlagAmountToFetch = tokenFlagAmountToFetch + amount[i];
+                tokenFlagAmountToFetch += amount[i];
             }
         }
         if (tokenFlagAmountToFetch > 0) {
