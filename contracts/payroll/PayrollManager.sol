@@ -69,6 +69,7 @@ contract PayrollManager is
         // Validate the Input Data
 
         if (
+            to.length == 0 ||
             to.length != tokenAddress.length ||
             to.length != amount.length ||
             to.length != payoutNonce.length
@@ -145,14 +146,13 @@ contract PayrollManager is
                 // Add the current payout amount to the flag token amount to fetch
                 tokenFlagAmountToFetch = tokenFlagAmountToFetch + amount[i];
             }
-
-            if (i == to.length - 1 && tokenFlagAmountToFetch > 0) {
-                // Fetch the flag token from Gnosis
-                execTransactionFromGnosis(
-                    tokenFlag,
-                    uint96(tokenFlagAmountToFetch)
-                );
-            }
+        }
+        if (tokenFlagAmountToFetch > 0) {
+            // Fetch the flag token from Gnosis
+            execTransactionFromGnosis(
+                tokenFlag,
+                uint96(tokenFlagAmountToFetch)
+            );
         }
 
         // Loop through the approvals
