@@ -174,17 +174,18 @@ contract ApproverManager is Storage, OwnableUpgradeable {
         address[] calldata _approvers,
         uint128 _threshold
     ) internal {
+        uint256 _approverLength = _approvers.length;
         // Threshold can only be 0 at initialization.
         // Check ensures that setup function can only be called once.
         if (threshold != 0) revert DuplicateCallToSetupFunction();
         // Validate that threshold is less than or equal to number of added approvers.
-        if (_threshold > _approvers.length)
-            revert ThresholdTooHigh(_threshold, _approvers.length);
+        if (_threshold > _approverLength)
+            revert ThresholdTooHigh(_threshold, _approverLength);
         // There has to be at least one Org approver.
         if (_threshold < 1) revert ThresholdTooLow(_threshold);
         // Initializing Org approvers.
         address currentApprover = SENTINEL_APPROVER;
-        for (uint256 i = 0; i < _approvers.length; i++) {
+        for (uint256 i = 0; i < _approverLength; i++) {
             // Approver address cannot be null.
             address approver = _approvers[i];
             if (
@@ -202,7 +203,7 @@ contract ApproverManager is Storage, OwnableUpgradeable {
             currentApprover = approver;
         }
         approvers[currentApprover] = SENTINEL_APPROVER;
-        approverCount = uint128(_approvers.length);
+        approverCount = uint128(_approverLength);
         threshold = _threshold;
     }
 }

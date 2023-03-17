@@ -66,31 +66,34 @@ contract PayrollManager is
         bytes32[] memory roots,
         bytes[] memory signatures
     ) external nonReentrant whenNotPaused {
-        // Validate the Input Data
+        // Caching array lengths
+        uint128 payoutLength = uint128(to.length);
+        uint128 rootLength = uint128(roots.length);
 
-        if (
-            to.length == 0 ||
-            to.length != tokenAddress.length ||
-            to.length != amount.length ||
-            to.length != payoutNonce.length
-        ) revert PayrollDataLengthMismatch();
-
-        if (roots.length != signatures.length)
-            revert RootSignatureLengthMismatch();
-
-        validateSignatures(roots, signatures);
-
-        // Initialize the approvals array
-        bool[] memory isApproved = new bool[](to.length);
+        // Initialize the flag token amount to fetch
+        uint256 tokenFlagAmountToFetch = 0;
 
         // Initialize the flag token address
         address tokenFlag = tokenAddress[0];
 
-        // Initialize the flag token amount to fetch
-        uint128 tokenFlagAmountToFetch = 0;
+        // Initialize the approvals array
+        bool[] memory isApproved = new bool[](payoutLength);
+
+        // Validate the Input Data
+        if (
+            payoutLength == 0 ||
+            payoutLength != tokenAddress.length ||
+            payoutLength != amount.length ||
+            payoutLength != payoutNonce.length
+        ) revert PayrollDataLengthMismatch();
+
+        if (rootLength != signatures.length)
+            revert RootSignatureLengthMismatch();
+
+        validateSignatures(roots, signatures);
 
         // Loop through the payouts
-        for (uint256 i = 0; i < to.length; i++) {
+        for (uint256 i = 0; i < payoutLength; i++) {
             // Revert if the payout nonce has already been executed
             if (getPayoutNonce(payoutNonce[i]))
                 revert PayoutNonceAlreadyExecuted(payoutNonce[i]);
@@ -107,11 +110,7 @@ contract PayrollManager is
             uint256 approvals;
 
             // Loop through the roots
-            for (
-                uint256 j = 0;
-                j < roots.length && approvals < threshold;
-                j++
-            ) {
+            for (uint256 j = 0; j < rootLength && approvals < threshold; j++) {
                 // Verify the root has been validated
                 // Verify the proof against the current root and increment the approvals counter
 
@@ -156,7 +155,7 @@ contract PayrollManager is
         }
 
         // Loop through the approvals
-        for (uint i = 0; i < isApproved.length; i++) {
+        for (uint i = 0; i < payoutLength; i++) {
             // Transfer the funds to the recipient (to) addresses
             if (isApproved[i] && !getPayoutNonce(payoutNonce[i])) {
                 if (tokenAddress[i] == address(0)) {
@@ -264,11 +263,13 @@ contract PayrollManager is
         // The bit index of the uint256 is the payout nonce % 256 (0-255)
         uint256 bitIndex = uint8(payoutNonce);
 
+        uint256 nonceLength = packedPayoutNonces.length;
+
         // If the slot is greater than the length of the array, we need to add more slots
-        if (packedPayoutNonces.length <= slot) {
+        if (nonceLength <= slot) {
             // Add the required number of slots
 
-            while (packedPayoutNonces.length <= slot) {
+            while (nonceLength <= slot) {
                 packedPayoutNonces.push(0);
             }
         }
