@@ -17,6 +17,7 @@ error RootSignatureLengthMismatch();
 error PaymentTokenLengthMismatch();
 error TokensLeftInContract(address tokenAddress);
 error PayoutNonceAlreadyExecuted(uint64 nonce);
+error TokensNotSorted(address tokenAddress1, address tokenAddress2);
 
 contract PayrollManager is
     Signature,
@@ -127,6 +128,10 @@ contract PayrollManager is
 
                 // Check if the token address is the same as the flag token address
                 if (tokenFlag != tokenAddress[i]) {
+                    // Enforce ascending order of token addresses
+                    if (tokenFlag > tokenAddress[i])
+                        revert TokensNotSorted(tokenFlag, tokenAddress[i]);
+
                     // Fetch the flag token from Gnosis
                     execTransactionFromGnosis(
                         tokenFlag,
