@@ -134,10 +134,9 @@ contract PayrollManager is
                     );
                     // Set the flag token address to the current token address
                     tokenFlag = tokenAddress[i];
-                    tokenFlagAmountToFetch = amount[i];
-                } else {
-                    tokenFlagAmountToFetch = tokenFlagAmountToFetch + amount[i];
+                    tokenFlagAmountToFetch = 0;
                 }
+                tokenFlagAmountToFetch = tokenFlagAmountToFetch + amount[i];
             }
 
             if (i == to.length - 1 && tokenFlagAmountToFetch > 0) {
