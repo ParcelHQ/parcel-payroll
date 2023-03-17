@@ -259,10 +259,10 @@ contract PayrollManager is
         // Each uint256 represents 256 payout nonces
 
         // Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
-        uint256 slot = payoutNonce / 256;
+        uint256 slot = uint248(payoutNonce >> 8);
 
         // The bit index of the uint256 is the payout nonce % 256 (0-255)
-        uint256 bitIndex = payoutNonce % 256;
+        uint256 bitIndex = uint8(payoutNonce);
 
         // If the slot is greater than the length of the array, we need to add more slots
         if (packedPayoutNonces.length <= slot) {
