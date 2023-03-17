@@ -308,12 +308,21 @@ contract PayrollManager is
         address tokenAddress,
         uint96 amount
     ) internal {
+        uint contractBalance = 0;
+        if (tokenAddress != address(0)) {
+            contractBalance = IERC20Upgradeable(tokenAddress).balanceOf(
+                address(this)
+            );
+        } else {
+            contractBalance = address(this).balance;
+        }
         // Execute payout via allowance module
+        // Fetch amount is the difference between the flag token amount to fetch and the current token balance
         IAllowanceModule(ALLOWANCE_MODULE).executeAllowanceTransfer(
             owner(),
             tokenAddress,
             payable(address(this)),
-            amount,
+            amount - uint96(contractBalance),
             address(0),
             0,
             address(this),
