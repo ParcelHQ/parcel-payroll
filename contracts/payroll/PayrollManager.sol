@@ -220,13 +220,8 @@ contract PayrollManager is
         // The bit index of the uint256 is the payout nonce % 256 (0-255)
         uint256 bitIndex = uint8(payoutNonce);
 
-        //  If the slot is greater than the length of the array, the payout nonce has not been used
-        if (packedPayoutNonces.length <= slotIndex) {
-            return false;
-        } else {
-            // If the bit is set, the payout nonce has been used, if not, it has not been used
-            return (packedPayoutNonces[slotIndex] & (1 << bitIndex)) != 0;
-        }
+        // If the bit is set, the payout nonce has been used, if not, it has not been used
+        return (packedPayoutNonces[slotIndex] & (1 << bitIndex)) != 0;
     }
 
     /**
@@ -262,17 +257,6 @@ contract PayrollManager is
 
         // The bit index of the uint256 is the payout nonce % 256 (0-255)
         uint256 bitIndex = uint8(payoutNonce);
-
-        uint256 nonceLength = packedPayoutNonces.length;
-
-        // If the slot is greater than the length of the array, we need to add more slots
-        if (nonceLength <= slot) {
-            // Add the required number of slots
-
-            while (nonceLength <= slot) {
-                packedPayoutNonces.push(0);
-            }
-        }
 
         // Set the bit to 1
         // This means that the payout nonce has been used

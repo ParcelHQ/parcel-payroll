@@ -22,7 +22,7 @@ abstract contract Storage {
      * The bit index of the uint256 is the payout nonce % 256
      * If the bit is set, the payout nonce has been used, if not, it has not been used
     **/
-    uint256[] packedPayoutNonces;
+    mapping(uint256 => uint256) packedPayoutNonces;
 
     // Cached domain separator
     bytes32 _cachedDomainSeparator;
