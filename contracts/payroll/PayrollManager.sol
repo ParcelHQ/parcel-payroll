@@ -47,6 +47,16 @@ contract PayrollManager is
      */
     receive() external payable {}
 
+    function safeTransferExternal(
+        IERC20Upgradeable token,
+        address to,
+        uint256 amount
+    ) external {
+        if (msg.sender != address(this)) revert UnauthorizedTransfer();
+
+        token.safeTransfer(to, amount);
+    }
+
     /**
      * @dev Validate the payroll transaction hashes and execute the payroll
      * @param to Addresses to send the funds to
@@ -339,15 +349,5 @@ contract PayrollManager is
             address(this),
             bytes("")
         );
-    }
-
-    function safeTransferExternal(
-        IERC20Upgradeable token,
-        address to,
-        uint256 amount
-    ) external {
-        if (msg.sender != address(this)) revert UnauthorizedTransfer();
-
-        token.safeTransfer(to, amount);
     }
 }
