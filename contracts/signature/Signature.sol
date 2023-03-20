@@ -2,12 +2,12 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "../payroll/Storage.sol";
+import "../payroll/ApproverManager.sol";
 
 // Errors
 error InvalidSignatureLength();
 
-contract Signature is Storage {
+contract Signature is ApproverManager {
     using ECDSA for bytes32;
 
     // Domain Typehash
