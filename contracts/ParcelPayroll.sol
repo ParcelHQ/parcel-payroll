@@ -513,7 +513,7 @@ contract ParcelPayroll is
         address tokenAddress,
         uint96 amount
     ) internal {
-        uint contractBalance = 0;
+        uint256 contractBalance;
         if (tokenAddress != address(0)) {
             contractBalance = IERC20Upgradeable(tokenAddress).balanceOf(
                 address(this)
