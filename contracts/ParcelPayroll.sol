@@ -482,9 +482,10 @@ contract ParcelPayroll is
         bytes32[] memory roots,
         bytes[] memory signatures
     ) internal view {
+        uint256 rootLength = roots.length;
         // Validate the roots via approver signatures
         address currentApprover;
-        for (uint256 i = 0; i < roots.length; i++) {
+        for (uint256 i = 0; i < rootLength; ) {
             // Recover signer from the signature
             address signer = validatePayrollTxHashes(roots[i], signatures[i]);
             // Check if the signer is an approver & is different from the current approver
@@ -496,6 +497,10 @@ contract ParcelPayroll is
 
             // Set the current approver to the signer
             currentApprover = signer;
+
+            unchecked {
+                i++;
+            }
         }
     }
 
