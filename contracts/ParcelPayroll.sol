@@ -157,14 +157,6 @@ contract ParcelPayroll is
         // Caching array lengths
         uint128 payoutLength = uint128(to.length);
         uint128 rootLength = uint128(roots.length);
-
-        // Initialize the flag token amount to fetch
-        uint256 tokenFlagAmountToFetch = 0;
-
-        // Initialize the flag token address
-        address tokenFlag = tokenAddress[0];
-
-        // Initialize the approvals array
         bool[] memory isApproved = new bool[](payoutLength);
 
         // Validate the Input Data
@@ -180,68 +172,85 @@ contract ParcelPayroll is
 
         validateSignatures(roots, signatures);
 
-        // Loop through the payouts
-        for (uint256 i = 0; i < payoutLength; i++) {
-            // Revert if the payout nonce has already been executed
-            if (getPayoutNonce(payoutNonce[i]))
-                revert PayoutNonceAlreadyExecuted(payoutNonce[i]);
+        {
+            // Initialize the flag token amount to fetch
+            uint256 tokenFlagAmountToFetch = 0;
 
-            // Generate the leaf from the payout data
-            bytes32 leaf = encodeTransactionData(
-                to[i],
-                tokenAddress[i],
-                amount[i],
-                payoutNonce[i]
-            );
+            // Initialize the flag token address
+            address tokenFlag = tokenAddress[0];
 
-            // Initialize the approvals counter
-            uint256 approvals;
+            // Initialize the approvals array
 
-            // Loop through the roots
-            for (uint256 j = 0; j < rootLength && approvals < threshold; j++) {
-                // Verify the root has been validated
-                // Verify the proof against the current root and increment the approvals counter
+            // Loop through the payouts
+            for (uint256 i = 0; i < payoutLength; i++) {
+                // Revert if the payout nonce has already been executed
+                if (getPayoutNonce(payoutNonce[i]))
+                    revert PayoutNonceAlreadyExecuted(payoutNonce[i]);
 
-                if (
-                    MerkleProofUpgradeable.verify(proof[i][j], roots[j], leaf)
+                // Generate the leaf from the payout data
+                bytes32 leaf = encodeTransactionData(
+                    to[i],
+                    tokenAddress[i],
+                    amount[i],
+                    payoutNonce[i]
+                );
+
+                // Initialize the approvals counter
+                uint256 approvals;
+
+                // Loop through the roots
+                for (
+                    uint256 j = 0;
+                    j < rootLength && approvals < threshold;
+                    j++
                 ) {
-                    ++approvals;
+                    // Verify the root has been validated
+                    // Verify the proof against the current root and increment the approvals counter
+
+                    if (
+                        MerkleProofUpgradeable.verify(
+                            proof[i][j],
+                            roots[j],
+                            leaf
+                        )
+                    ) {
+                        ++approvals;
+                    }
+                }
+
+                // Check if the approvals are greater than or equal to the required approvals
+                if (approvals >= threshold) {
+                    // Set the approval to true
+                    isApproved[i] = true;
+
+                    // Check if the token address is the same as the flag token address
+                    if (tokenFlag != tokenAddress[i]) {
+                        // Enforce ascending order of token addresses
+                        if (tokenFlag > tokenAddress[i])
+                            revert TokensNotSorted(tokenFlag, tokenAddress[i]);
+
+                        // Fetch the flag token from Gnosis
+                        execTransactionFromGnosis(
+                            tokenFlag,
+                            uint96(tokenFlagAmountToFetch)
+                        );
+                        // Set the flag token address to the current token address
+                        tokenFlag = tokenAddress[i];
+                        // Reset the flag token amount to fetch
+                        tokenFlagAmountToFetch = 0;
+                    }
+                    // Add the current payout amount to the flag token amount to fetch
+                    tokenFlagAmountToFetch += amount[i];
                 }
             }
-
-            // Check if the approvals are greater than or equal to the required approvals
-            if (approvals >= threshold) {
-                // Set the approval to true
-                isApproved[i] = true;
-
-                // Check if the token address is the same as the flag token address
-                if (tokenFlag != tokenAddress[i]) {
-                    // Enforce ascending order of token addresses
-                    if (tokenFlag > tokenAddress[i])
-                        revert TokensNotSorted(tokenFlag, tokenAddress[i]);
-
-                    // Fetch the flag token from Gnosis
-                    execTransactionFromGnosis(
-                        tokenFlag,
-                        uint96(tokenFlagAmountToFetch)
-                    );
-                    // Set the flag token address to the current token address
-                    tokenFlag = tokenAddress[i];
-                    // Reset the flag token amount to fetch
-                    tokenFlagAmountToFetch = 0;
-                }
-                // Add the current payout amount to the flag token amount to fetch
-                tokenFlagAmountToFetch += amount[i];
+            if (tokenFlagAmountToFetch > 0) {
+                // Fetch the flag token from Gnosis
+                execTransactionFromGnosis(
+                    tokenFlag,
+                    uint96(tokenFlagAmountToFetch)
+                );
             }
         }
-        if (tokenFlagAmountToFetch > 0) {
-            // Fetch the flag token from Gnosis
-            execTransactionFromGnosis(
-                tokenFlag,
-                uint96(tokenFlagAmountToFetch)
-            );
-        }
-
         // Loop through the approvals
         for (uint i = 0; i < payoutLength; i++) {
             // Transfer the funds to the recipient (to) addresses
