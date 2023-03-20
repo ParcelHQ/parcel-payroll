@@ -7,7 +7,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 
 import "./payroll/ApproverManager.sol";
 import "./interfaces/IAllowanceModule.sol";
@@ -45,7 +45,7 @@ contract ParcelPayroll is
     ApproverManager
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
-    using ECDSA for bytes32;
+    using ECDSAUpgradeable for bytes32;
 
     /**
      * @dev Emitted when the contract is initialized
