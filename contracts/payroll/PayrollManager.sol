@@ -319,6 +319,7 @@ contract PayrollManager is
         address tokenAddress,
         uint96 amount
     ) internal {
+        // Get the contract balance of Native tokens or ERC20 tokens
         uint contractBalance = 0;
         if (tokenAddress != address(0)) {
             contractBalance = IERC20Upgradeable(tokenAddress).balanceOf(
@@ -337,6 +338,7 @@ contract PayrollManager is
             owner(),
             tokenAddress,
             payable(address(this)),
+            //  Amount to be fetched from safe = amount requested - current balance
             amount - uint96(contractBalance),
             address(0),
             0,
