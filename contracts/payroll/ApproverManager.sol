@@ -14,6 +14,13 @@ error ApproverAlreadyExists(address approver);
 error OnlyApprover();
 error UintOverflow();
 
+/**
+ * @title ApproverManager
+ * @notice This contract manages the approvers for the Org.
+ * @dev This contract is used by the Parcel Payroll contract.
+ * @author Sriram Kasyap Meduri - <sriram@parcel.money>
+ * @author Krishna Kant Sharma - <krishna@parcel.money>
+ */
 contract ApproverManager is OwnableUpgradeable {
     /**
      * @dev Storage layout of the contract.

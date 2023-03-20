@@ -7,23 +7,35 @@ import "../payroll/ApproverManager.sol";
 // Errors
 error InvalidSignatureLength();
 
+/**
+ * @title Signature
+ * @notice - This contract is has the logic to verify the signatures related to the payroll transactions
+ * @author Krishna Kant Sharma - <krishna@parcel.money>
+ */
 contract Signature is ApproverManager {
     using ECDSA for bytes32;
 
-    // Domain Typehash
+    /**
+     * @dev - Typehash of the EIP712 Domain
+     */
     bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(uint256 chainId,address verifyingContract)");
 
-    // Payroll Transaction Typehash
+    /**
+     * @dev - Typehash of the Payroll Transaction
+     */
     bytes32 internal constant PAYROLL_TX_TYPEHASH =
         keccak256("PayrollTx(bytes32 rootHash)");
 
+    /**
+     * @dev - Typehash of the Nonce Cancelation
+     */
     bytes32 internal constant CANCEL_NONCE =
         keccak256("CancelNonce(uint64 nonce)");
 
     /**
      * @dev generate the hash of the payroll transaction
-     * @param rootHash hash = encodeTransactionData(recipient, tokenAddress, amount, nonce)
+     * @param rootHash hash = hash of the merkle roots signed by the approver
      * @return bytes32 hash
      */
     function generateTransactionHash(
@@ -40,6 +52,11 @@ contract Signature is ApproverManager {
         return digest;
     }
 
+    /**
+     * @dev generate the hash of the cancel transaction
+     * @param nonce nonce of the payout
+     * @return bytes32 hash
+     */
     function getCancelTransactionHash(
         uint64 nonce
     ) public view returns (bytes32) {
@@ -57,6 +74,7 @@ contract Signature is ApproverManager {
     /**
      * @dev get the domain separator
      * @return bytes32 domain separator
+     * @dev - This function is uses cached domain separator when possible to save gas
      */
     function getDomainSeparator() internal view returns (bytes32) {
         if (address(this) == _cachedThis && block.chainid == _cachedChainId) {
@@ -68,6 +86,7 @@ contract Signature is ApproverManager {
 
     /**
      * @dev Build the domain separator
+     * @param proxy address of the proxy contract
      * @return bytes32 domain separator
      */
     function _buildDomainSeparator(
@@ -77,6 +96,13 @@ contract Signature is ApproverManager {
             keccak256(abi.encode(EIP712_DOMAIN_TYPEHASH, block.chainid, proxy));
     }
 
+    /**
+     * @dev split the signature into v, r, s
+     * @param signature bytes32 signature
+     * @return v uint8 v
+     * @return r bytes32 r
+     * @return s bytes32 s
+     */
     function splitSignature(
         bytes memory signature
     ) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
@@ -95,7 +121,7 @@ contract Signature is ApproverManager {
     /**
      * @dev validate the signature of the payroll transaction
      * @param rootHash hash = encodeTransactionData(recipient, tokenAddress, amount, nonce)
-     * @param signature signature
+     * @param signature signature of the rootHash
      * @return address of the signer
      */
     function validatePayrollTxHashes(
@@ -123,6 +149,12 @@ contract Signature is ApproverManager {
         return digest.recover(v, r, s);
     }
 
+    /**
+     * @dev validate the signature to cancel nonce
+     * @param nonce nonce of the payout
+     * @param signature signature of the nonce
+     * @return address of the signer
+     */
     function validateCancelNonce(
         uint64 nonce,
         bytes memory signature

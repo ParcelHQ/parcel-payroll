@@ -21,7 +21,7 @@ error CannotDeployForOthers();
 error ProxyDoesntMatchPrediction(address proxy, address prediction);
 
 /**
- * @title ParcelPayrollFactory - A factory contract to deploy ParcelPayroll contracts
+ * @title ParcelPayrollFactory - A factory contract to deploy ParcelPayroll contracts.
  * @author Krishna Kant Sharma - <krishna@parcel.money>
  * @author Sriram Kasyap Meduri - <sriram@parcel.money>
  */

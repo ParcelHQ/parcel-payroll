@@ -28,15 +28,19 @@ error ImplementationNotWhitelisted(address implementation);
  *
  * Our recommendation is for the dedicated account to be an instance of the {ProxyAdmin} contract. If set up this way,
  * you should think of the `ProxyAdmin` instance as the real administrative interface of your proxy.
+ * @author Krishna Kant Sharma - <krishna@parcel.money>
  */
 contract ParcelTransparentProxy is ERC1967Proxy {
+    /**
+     * @dev Address of the AddressRegistry contract.
+     * This contract is used to store the whitelisted implementations of the Parcel Payroll contract.
+     */
+    address immutable addressRegistry;
+
     /**
      * @dev Initializes an upgradeable proxy managed by `_admin`, backed by the implementation at `_logic`, and
      * optionally initialized with `_data` as explained in {ERC1967Proxy-constructor}.
      */
-
-    address immutable addressRegistry;
-
     constructor(
         address _logic,
         address admin_,
