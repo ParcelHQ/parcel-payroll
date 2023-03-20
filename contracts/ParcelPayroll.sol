@@ -517,7 +517,7 @@ contract ParcelPayroll is
             contractBalance = address(this).balance;
         }
 
-        // If the contract balance is greater than the amount, no need to fetch more tokens from safe
+        // If the contract balance is greater than or equal to the required amount, no need to fetch more tokens from safe
         if (contractBalance >= amount) return;
 
         // Execute payout via allowance module
