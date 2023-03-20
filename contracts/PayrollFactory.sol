@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 import "./ParcelTransparentProxy.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
-interface IOrganizer {
+interface IParcelPayroll {
     function initialize(
         address[] calldata _approvers,
         uint128 approvalsRequired
@@ -91,7 +91,7 @@ contract ParcelPayrollFactory is Ownable2Step {
         address safeAddress
     ) public view returns (address) {
         bytes memory _data = abi.encodeCall(
-            IOrganizer.initialize,
+            IParcelPayroll.initialize,
             (_approvers, approvalsRequired)
         );
 
@@ -137,7 +137,7 @@ contract ParcelPayrollFactory is Ownable2Step {
             revert OrgOnboardedAlready(msg.sender);
 
         bytes memory _data = abi.encodeCall(
-            IOrganizer.initialize,
+            IParcelPayroll.initialize,
             (_approvers, approvalsRequired)
         );
 
@@ -155,7 +155,7 @@ contract ParcelPayrollFactory is Ownable2Step {
             addressRegistry
         );
 
-        IOrganizer(address(proxy)).transferOwnership(msg.sender);
+        IParcelPayroll(address(proxy)).transferOwnership(msg.sender);
 
         if (address(proxy) != predictedAddress)
             revert ProxyDoesntMatchPrediction(address(proxy), predictedAddress);
