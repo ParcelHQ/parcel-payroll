@@ -3,12 +3,6 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
-interface IAddressRegistry {
-    function isWhitelisted(
-        address _implementation
-    ) external view returns (bool);
-}
-
 // Errors
 error InvalidImplementationProvided(address implementation);
 
