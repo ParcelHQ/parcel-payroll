@@ -70,7 +70,7 @@ contract ParcelPayroll is
         address tokenAddress,
         address to,
         uint256 amount,
-        uint payoutNonce
+        uint256 payoutNonce
     );
 
     /**
@@ -84,7 +84,7 @@ contract ParcelPayroll is
         address tokenAddress,
         address to,
         uint256 amount,
-        uint payoutNonce
+        uint256 payoutNonce
     );
 
     /**
@@ -255,7 +255,7 @@ contract ParcelPayroll is
             }
         }
         // Loop through the approvals
-        for (uint i = 0; i < payoutLength; i++) {
+        for (uint256 i = 0; i < payoutLength; i++) {
             // Transfer the funds to the recipient (to) addresses
             if (isApproved[i] && !getPayoutNonce(payoutNonce[i])) {
                 if (tokenAddress[i] == address(0)) {
