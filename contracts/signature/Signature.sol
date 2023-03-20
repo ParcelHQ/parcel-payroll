@@ -19,7 +19,9 @@ contract Signature is ApproverManager {
      * @dev - Typehash of the EIP712 Domain
      */
     bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
-        keccak256("EIP712Domain(uint256 chainId,address verifyingContract)");
+        keccak256(
+            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+        );
 
     /**
      * @dev - Typehash of the Payroll Transaction
@@ -93,7 +95,15 @@ contract Signature is ApproverManager {
         address proxy
     ) internal view returns (bytes32) {
         return
-            keccak256(abi.encode(EIP712_DOMAIN_TYPEHASH, block.chainid, proxy));
+            keccak256(
+                abi.encode(
+                    EIP712_DOMAIN_TYPEHASH,
+                    keccak256(bytes(NAME)),
+                    keccak256(bytes(VERSION)),
+                    block.chainid,
+                    proxy
+                )
+            );
     }
 
     /**
