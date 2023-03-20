@@ -29,6 +29,11 @@ contract ApproverManager is OwnableUpgradeable {
      */
 
     /**
+     * @dev The name of the contract.
+     */
+    string public constant NAME = "ParcelPayroll";
+
+    /**
      * @dev The version of the contract.
      */
     string public constant VERSION = "1.0.0";
@@ -87,6 +92,26 @@ contract ApproverManager is OwnableUpgradeable {
      * @dev Storage Gaps to prevent upgrade errors
      */
     uint256[48] __gap;
+
+    /**
+     * @dev - Typehash of the EIP712 Domain
+     */
+    bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
+        keccak256(
+            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+        );
+
+    /**
+     * @dev - Typehash of the Payroll Transaction
+     */
+    bytes32 internal constant PAYROLL_TX_TYPEHASH =
+        keccak256("PayrollTx(bytes32 rootHash)");
+
+    /**
+     * @dev - Typehash of the Nonce Cancelation
+     */
+    bytes32 internal constant CANCEL_NONCE =
+        keccak256("CancelNonce(uint64 nonce)");
 
     /**
      * @dev Events emitted by the contract.
