@@ -17,12 +17,13 @@ abstract contract Storage {
     uint128 public threshold;
 
     /**
-     Array of uint256, each uint256 represents 256 payout nonces
-     * Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
-     * The bit index of the uint256 is the payout nonce % 256
-     * If the bit is set, the payout nonce has been used, if not, it has not been used
-    **/
-    uint256[] packedPayoutNonces;
+     * @dev The payout nonce is used to prevent replay attacks
+     * Each payout nonce is packed into a bit in a uint256. The bit is set to 1 if the nonce has been used and 0 if not.
+     * This way, 256 nonces are packed into a single uint256 and stored in the value of packedPayoutNonces mapping.
+     * The key of the mapping is the slot number of the payout. Each slot can store 256 nonces.
+     * By using mapping, we can access any nonce in constant time.
+     **/
+    mapping(uint256 => uint256) packedPayoutNonces;
 
     // Cached domain separator
     bytes32 _cachedDomainSeparator;

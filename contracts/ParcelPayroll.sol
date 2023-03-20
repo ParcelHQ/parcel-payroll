@@ -65,23 +65,25 @@ contract ParcelPayroll is UUPSUpgradeable, ApproverManager, PayrollManager {
     function sweep(address tokenAddress) external nonReentrant {
         if (tokenAddress == address(0)) {
             // Transfer native tokens
-            (bool sent, bytes memory data) = msg.sender.call{
+            (bool sent, bytes memory data) = owner().call{
                 value: address(this).balance
             }("");
 
             if (!sent) revert SweepFailed(address(0), address(this).balance);
         } else {
+            IERC20Upgradeable IERC20Token = IERC20Upgradeable(tokenAddress);
             try
-                IERC20Upgradeable(tokenAddress).safeTransfer(
-                    msg.sender,
-                    IERC20Upgradeable(tokenAddress).balanceOf(address(this))
+                this.safeTransferExternal(
+                    IERC20Token,
+                    owner(),
+                    IERC20Token.balanceOf(address(this))
                 )
             {
                 // Transfer ERC20 tokens
             } catch {
                 revert SweepFailed(
                     tokenAddress,
-                    IERC20Upgradeable(tokenAddress).balanceOf(address(this))
+                    IERC20Token.balanceOf(address(this))
                 );
             }
         }

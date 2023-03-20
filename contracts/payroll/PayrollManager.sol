@@ -5,8 +5,8 @@ import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgrad
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "../library/SafeERC20Upgradeable.sol";
 import "../interfaces/IAllowanceModule.sol";
 import "../signature/Signature.sol";
 
@@ -16,6 +16,9 @@ error PayrollDataLengthMismatch();
 error RootSignatureLengthMismatch();
 error PaymentTokenLengthMismatch();
 error TokensLeftInContract(address tokenAddress);
+error PayoutNonceAlreadyExecuted(uint64 nonce);
+error TokensNotSorted(address tokenAddress1, address tokenAddress2);
+error UnauthorizedTransfer();
 
 contract PayrollManager is
     Signature,
@@ -44,6 +47,16 @@ contract PayrollManager is
      */
     receive() external payable {}
 
+    function safeTransferExternal(
+        IERC20Upgradeable token,
+        address to,
+        uint256 amount
+    ) external {
+        if (msg.sender != address(this)) revert UnauthorizedTransfer();
+
+        token.safeTransfer(to, amount);
+    }
+
     /**
      * @dev Validate the payroll transaction hashes and execute the payroll
      * @param to Addresses to send the funds to
@@ -64,73 +77,96 @@ contract PayrollManager is
         bytes32[] memory roots,
         bytes[] memory signatures
     ) external nonReentrant whenNotPaused {
-        // Validate the Input Data
+        // Caching array lengths
+        uint128 payoutLength = uint128(to.length);
+        uint128 rootLength = uint128(roots.length);
+        bool[] memory isApproved = new bool[](payoutLength);
 
+        // Validate the Input Data
         if (
-            to.length != tokenAddress.length ||
-            to.length != amount.length ||
-            to.length != payoutNonce.length
+            payoutLength == 0 ||
+            payoutLength != tokenAddress.length ||
+            payoutLength != amount.length ||
+            payoutLength != payoutNonce.length
         ) revert PayrollDataLengthMismatch();
 
-        if (roots.length != signatures.length)
+        if (rootLength != signatures.length)
             revert RootSignatureLengthMismatch();
 
         validateSignatures(roots, signatures);
 
-        // Initialize the approvals array
-        bool[] memory isApproved = new bool[](to.length);
+        {
+            // Initialize the flag token amount to fetch
+            uint256 tokenFlagAmountToFetch = 0;
 
-        // Initialize the flag token address
-        address tokenFlag = tokenAddress[0];
+            // Initialize the flag token address
+            address tokenFlag = tokenAddress[0];
 
-        // Initialize the flag token amount to fetch
-        uint128 tokenFlagAmountToFetch = 0;
+            // Initialize the approvals array
 
-        // Loop through the payouts
-        for (uint256 i = 0; i < to.length; i++) {
-            // Generate the leaf from the payout data
-            bytes32 leaf = encodeTransactionData(
-                to[i],
-                tokenAddress[i],
-                amount[i],
-                payoutNonce[i]
-            );
+            // Loop through the payouts
+            for (uint256 i = 0; i < payoutLength; i++) {
+                // Revert if the payout nonce has already been executed
+                if (getPayoutNonce(payoutNonce[i]))
+                    revert PayoutNonceAlreadyExecuted(payoutNonce[i]);
 
-            // Initialize the approvals counter
-            uint256 approvals;
+                // Generate the leaf from the payout data
+                bytes32 leaf = encodeTransactionData(
+                    to[i],
+                    tokenAddress[i],
+                    amount[i],
+                    payoutNonce[i]
+                );
 
-            // Loop through the roots
-            for (uint256 j = 0; j < roots.length; j++) {
-                // Verify the root has been validated
-                // Verify the proof against the current root and increment the approvals counter
-                if (
-                    MerkleProofUpgradeable.verify(proof[i][j], roots[j], leaf)
+                // Initialize the approvals counter
+                uint256 approvals;
+
+                // Loop through the roots
+                for (
+                    uint256 j = 0;
+                    j < rootLength && approvals < threshold;
+                    j++
                 ) {
-                    ++approvals;
+                    // Verify the root has been validated
+                    // Verify the proof against the current root and increment the approvals counter
+
+                    if (
+                        MerkleProofUpgradeable.verify(
+                            proof[i][j],
+                            roots[j],
+                            leaf
+                        )
+                    ) {
+                        ++approvals;
+                    }
+                }
+
+                // Check if the approvals are greater than or equal to the required approvals
+                if (approvals >= threshold) {
+                    // Set the approval to true
+                    isApproved[i] = true;
+
+                    // Check if the token address is the same as the flag token address
+                    if (tokenFlag != tokenAddress[i]) {
+                        // Enforce ascending order of token addresses
+                        if (tokenFlag > tokenAddress[i])
+                            revert TokensNotSorted(tokenFlag, tokenAddress[i]);
+
+                        // Fetch the flag token from Gnosis
+                        execTransactionFromGnosis(
+                            tokenFlag,
+                            uint96(tokenFlagAmountToFetch)
+                        );
+                        // Set the flag token address to the current token address
+                        tokenFlag = tokenAddress[i];
+                        // Reset the flag token amount to fetch
+                        tokenFlagAmountToFetch = 0;
+                    }
+                    // Add the current payout amount to the flag token amount to fetch
+                    tokenFlagAmountToFetch += amount[i];
                 }
             }
-
-            // Check if the approvals are greater than or equal to the required approvals
-            if (approvals >= threshold && !getPayoutNonce(payoutNonce[i])) {
-                // Set the approval to true
-                isApproved[i] = true;
-
-                // Check if the token address is the same as the flag token address
-                if (tokenFlag != tokenAddress[i]) {
-                    // Fetch the flag token from Gnosis
-                    execTransactionFromGnosis(
-                        tokenFlag,
-                        uint96(tokenFlagAmountToFetch)
-                    );
-                    // Set the flag token address to the current token address
-                    tokenFlag = tokenAddress[i];
-                    tokenFlagAmountToFetch = amount[i];
-                } else {
-                    tokenFlagAmountToFetch = tokenFlagAmountToFetch + amount[i];
-                }
-            }
-
-            if (i == to.length - 1 && tokenFlagAmountToFetch > 0) {
+            if (tokenFlagAmountToFetch > 0) {
                 // Fetch the flag token from Gnosis
                 execTransactionFromGnosis(
                     tokenFlag,
@@ -138,11 +174,10 @@ contract PayrollManager is
                 );
             }
         }
-
         // Loop through the approvals
-        for (uint i = 0; i < isApproved.length; i++) {
+        for (uint i = 0; i < payoutLength; i++) {
             // Transfer the funds to the recipient (to) addresses
-            if (isApproved[i]) {
+            if (isApproved[i] && !getPayoutNonce(payoutNonce[i])) {
                 if (tokenAddress[i] == address(0)) {
                     // Transfer Native tokens
                     (bool sent, bytes memory data) = to[i].call{
@@ -168,7 +203,8 @@ contract PayrollManager is
                 } else {
                     // Transfer ERC20 tokens
                     try
-                        IERC20Upgradeable(tokenAddress[i]).safeTransfer(
+                        this.safeTransferExternal(
+                            IERC20Upgradeable(tokenAddress[i]),
                             to[i],
                             amount[i]
                         )
@@ -200,18 +236,13 @@ contract PayrollManager is
      */
     function getPayoutNonce(uint256 payoutNonce) public view returns (bool) {
         // Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
-        uint256 slotIndex = payoutNonce / 256;
+        uint256 slotIndex = uint248(payoutNonce >> 8);
 
         // The bit index of the uint256 is the payout nonce % 256 (0-255)
-        uint256 bitIndex = payoutNonce % 256;
+        uint256 bitIndex = uint8(payoutNonce);
 
-        //  If the slot is greater than the length of the array, the payout nonce has not been used
-        if (packedPayoutNonces.length <= slotIndex) {
-            return false;
-        } else {
-            // If the bit is set, the payout nonce has been used, if not, it has not been used
-            return (packedPayoutNonces[slotIndex] & (1 << bitIndex)) != 0;
-        }
+        // If the bit is set, the payout nonce has been used, if not, it has not been used
+        return (packedPayoutNonces[slotIndex] & (1 << bitIndex)) != 0;
     }
 
     /**
@@ -243,19 +274,10 @@ contract PayrollManager is
         // Each uint256 represents 256 payout nonces
 
         // Each payout nonce is packed into a uint256, so the index of the uint256 in the array is the payout nonce / 256
-        uint256 slot = payoutNonce / 256;
+        uint256 slot = uint248(payoutNonce >> 8);
 
         // The bit index of the uint256 is the payout nonce % 256 (0-255)
-        uint256 bitIndex = payoutNonce % 256;
-
-        // If the slot is greater than the length of the array, we need to add more slots
-        if (packedPayoutNonces.length <= slot) {
-            // Add the required number of slots
-
-            while (packedPayoutNonces.length <= slot) {
-                packedPayoutNonces.push(0);
-            }
-        }
+        uint256 bitIndex = uint8(payoutNonce);
 
         // Set the bit to 1
         // This means that the payout nonce has been used
@@ -297,12 +319,27 @@ contract PayrollManager is
         address tokenAddress,
         uint96 amount
     ) internal {
+        // Get the contract balance of Native tokens or ERC20 tokens
+        uint contractBalance = 0;
+        if (tokenAddress != address(0)) {
+            contractBalance = IERC20Upgradeable(tokenAddress).balanceOf(
+                address(this)
+            );
+        } else {
+            contractBalance = address(this).balance;
+        }
+
+        // If the contract balance is greater than the amount, no need to fetch more tokens from safe
+        if (contractBalance >= amount) return;
+
         // Execute payout via allowance module
+        // Fetch amount is the difference between the flag token amount to fetch and the current token balance
         IAllowanceModule(ALLOWANCE_MODULE).executeAllowanceTransfer(
             owner(),
             tokenAddress,
             payable(address(this)),
-            amount,
+            //  Amount to be fetched from safe = amount requested - current balance
+            amount - uint96(contractBalance),
             address(0),
             0,
             address(this),
