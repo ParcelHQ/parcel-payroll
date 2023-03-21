@@ -142,13 +142,6 @@ contract ParcelPayrollFactory is Ownable2Step {
             (msg.sender, _approvers, approvalsRequired)
         );
 
-        address predictedAddress = computeAddress(
-            salt,
-            _approvers,
-            approvalsRequired,
-            msg.sender
-        );
-
         ParcelTransparentProxy proxy = new ParcelTransparentProxy{salt: salt}(
             logic,
             msg.sender,
@@ -156,11 +149,10 @@ contract ParcelPayrollFactory is Ownable2Step {
             addressRegistry
         );
 
-        if (address(proxy) != predictedAddress)
-            revert ProxyDoesntMatchPrediction(address(proxy), predictedAddress);
+        address proxyAddress = address(proxy);
 
-        parcelAddress[msg.sender] = predictedAddress;
-        emit OrgOnboarded(msg.sender, predictedAddress, logic, _data);
+        parcelAddress[msg.sender] = proxyAddress;
+        emit OrgOnboarded(msg.sender, proxyAddress, logic, _data);
     }
 
     /**
