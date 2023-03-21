@@ -159,8 +159,8 @@ contract ParcelPayrollFactory is Ownable2Step {
         if (address(proxy) != predictedAddress)
             revert ProxyDoesntMatchPrediction(address(proxy), predictedAddress);
 
-        parcelAddress[msg.sender] = address(proxy);
-        emit OrgOnboarded(msg.sender, address(proxy), predictedAddress, _data);
+        parcelAddress[msg.sender] = predictedAddress;
+        emit OrgOnboarded(msg.sender, predictedAddress, logic, _data);
     }
 
     /**
