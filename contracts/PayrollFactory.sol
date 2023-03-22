@@ -4,8 +4,9 @@ pragma solidity 0.8.17;
 import "./ParcelTransparentProxy.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
-interface IOrganizer {
+interface IParcelPayroll {
     function initialize(
+        address safeAddress,
         address[] calldata _approvers,
         uint128 approvalsRequired
     ) external;
@@ -21,7 +22,7 @@ error CannotDeployForOthers();
 error ProxyDoesntMatchPrediction(address proxy, address prediction);
 
 /**
- * @title ParcelPayrollFactory - A factory contract to deploy ParcelPayroll contracts
+ * @title ParcelPayrollFactory - A factory contract to deploy ParcelPayroll contracts.
  * @author Krishna Kant Sharma - <krishna@parcel.money>
  * @author Sriram Kasyap Meduri - <sriram@parcel.money>
  */
@@ -91,8 +92,8 @@ contract ParcelPayrollFactory is Ownable2Step {
         address safeAddress
     ) public view returns (address) {
         bytes memory _data = abi.encodeCall(
-            IOrganizer.initialize,
-            (_approvers, approvalsRequired)
+            IParcelPayroll.initialize,
+            (safeAddress, _approvers, approvalsRequired)
         );
 
         address predictedAddress = address(
@@ -137,15 +138,8 @@ contract ParcelPayrollFactory is Ownable2Step {
             revert OrgOnboardedAlready(msg.sender);
 
         bytes memory _data = abi.encodeCall(
-            IOrganizer.initialize,
-            (_approvers, approvalsRequired)
-        );
-
-        address predictedAddress = computeAddress(
-            salt,
-            _approvers,
-            approvalsRequired,
-            msg.sender
+            IParcelPayroll.initialize,
+            (msg.sender, _approvers, approvalsRequired)
         );
 
         ParcelTransparentProxy proxy = new ParcelTransparentProxy{salt: salt}(
@@ -155,13 +149,10 @@ contract ParcelPayrollFactory is Ownable2Step {
             addressRegistry
         );
 
-        IOrganizer(address(proxy)).transferOwnership(msg.sender);
+        address proxyAddress = address(proxy);
 
-        if (address(proxy) != predictedAddress)
-            revert ProxyDoesntMatchPrediction(address(proxy), predictedAddress);
-
-        parcelAddress[msg.sender] = address(proxy);
-        emit OrgOnboarded(msg.sender, address(proxy), predictedAddress, _data);
+        parcelAddress[msg.sender] = proxyAddress;
+        emit OrgOnboarded(msg.sender, proxyAddress, logic, _data);
     }
 
     /**

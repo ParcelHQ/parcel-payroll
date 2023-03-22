@@ -3,8 +3,6 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "./Storage.sol";
-
 // Errors
 error DuplicateCallToSetupFunction();
 error ThresholdTooHigh(uint256 threshold, uint256 approverCount);
@@ -16,11 +14,134 @@ error ApproverAlreadyExists(address approver);
 error OnlyApprover();
 error UintOverflow();
 
-contract ApproverManager is Storage, OwnableUpgradeable {
-    // Events
+/**
+ * @title ApproverManager
+ * @notice This contract manages the approvers for the Org.
+ * @dev This contract is used by the Parcel Payroll contract.
+ * @author Sriram Kasyap Meduri - <sriram@parcel.money>
+ * @author Krishna Kant Sharma - <krishna@parcel.money>
+ */
+contract ApproverManager is OwnableUpgradeable {
+    /**
+     * @dev Storage layout of the contract.
+     *
+     *
+     */
+
+    /**
+     * @dev The name of the contract.
+     */
+    string public constant NAME = "ParcelPayroll";
+
+    /**
+     * @dev The version of the contract.
+     */
+    string public constant VERSION = "1.0.0";
+
+    /**
+     * @dev The sentinel value for the linked list of approvers.
+     */
+    address internal constant SENTINEL_APPROVER = address(0x1);
+
+    /**
+     * @dev The address of the AllowanceModule contract.
+     */
+    address constant ALLOWANCE_MODULE =
+        0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134;
+
+    /**
+     * @dev Linked list of approvers.
+     */
+    mapping(address => address) internal approvers;
+
+    /**
+     * @dev Number of approvers.
+     */
+    uint128 internal approverCount;
+
+    /**
+     * @dev The threshold of approvers required to approve a payout.
+     */
+    uint128 public threshold;
+
+    /**
+     * @dev The payout nonce is used to prevent replay attacks
+     * Each payout nonce is packed into a bit in a uint256. The bit is set to 1 if the nonce has been used and 0 if not.
+     * This way, 256 nonces are packed into a single uint256 and stored in the value of packedPayoutNonces mapping.
+     * The key of the mapping is the slot number of the payout. Each slot can store 256 nonces.
+     * By using mapping, we can access any nonce in constant time.
+     **/
+    mapping(uint256 => uint256) packedPayoutNonces;
+
+    /**
+     * @dev The domain separator used for the EIP-712 signature, cached at initialisation.
+     */
+    bytes32 _cachedDomainSeparator;
+
+    /**
+     * @dev The chain ID of the network, cached at construction.
+     */
+    uint256 immutable _cachedChainId = block.chainid;
+
+    /**
+     * @dev The address of the Org contract, cached at initialisation.
+     */
+    address _cachedThis;
+
+    /**
+     * @dev Storage Gaps to prevent upgrade errors
+     */
+    uint256[48] __gap;
+
+    /**
+     * @dev - Typehash of the EIP712 Domain
+     */
+    bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
+        keccak256(
+            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+        );
+
+    /**
+     * @dev - Typehash of the Payroll Transaction
+     */
+    bytes32 internal constant PAYROLL_TX_TYPEHASH =
+        keccak256("PayrollTx(bytes32 rootHash)");
+
+    /**
+     * @dev - Typehash of the Nonce Cancelation
+     */
+    bytes32 internal constant CANCEL_NONCE =
+        keccak256("CancelNonce(uint64 nonce)");
+
+    /**
+     * @dev Events emitted by the contract.
+     *
+     *
+     */
+
+    /**
+     * @dev Emitted when a new approver is added.
+     * @param approver The address of the approver added.
+     */
     event AddedApprover(address approver);
+
+    /**
+     * @dev Emitted when an approver is removed.
+     * @param approver The address of the approver removed.
+     */
     event RemovedApprover(address approver);
+
+    /**
+     * @dev Emitted when the org threshold is changed.
+     * @param threshold The new threshold.
+     */
     event ChangedThreshold(uint256 threshold);
+
+    /**
+     * @dev Approver Management Functions
+     *
+     *
+     */
 
     /**
      * @notice Adds the approver `approver` to the Org and updates the threshold to `_threshold`.

@@ -1,6 +1,7 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("@nomiclabs/hardhat-etherscan");
 require("hardhat-gas-reporter");
+require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -19,6 +20,12 @@ module.exports = {
                 url: "https://eth-goerli.g.alchemy.com/v2/MT0pDHBrQ7J8fDTEPdPXcWD-JyAQbH0w",
             },
             allowUnlimitedContractSize: true,
+        },
+        goerli: {
+            url: process.env.GOERLI_RPC,
+            accounts: process.env.MNEMONIC
+                ? { mnemonic: process.env.MNEMONIC }
+                : [],
         },
     },
 
