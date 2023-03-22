@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 interface IParcelPayroll {
     function initialize(
+        address safeAddress,
         address[] calldata _approvers,
         uint128 approvalsRequired
     ) external;
@@ -92,7 +93,7 @@ contract ParcelPayrollFactory is Ownable2Step {
     ) public view returns (address) {
         bytes memory _data = abi.encodeCall(
             IParcelPayroll.initialize,
-            (_approvers, approvalsRequired)
+            (safeAddress, _approvers, approvalsRequired)
         );
 
         address predictedAddress = address(
@@ -138,14 +139,7 @@ contract ParcelPayrollFactory is Ownable2Step {
 
         bytes memory _data = abi.encodeCall(
             IParcelPayroll.initialize,
-            (_approvers, approvalsRequired)
-        );
-
-        address predictedAddress = computeAddress(
-            salt,
-            _approvers,
-            approvalsRequired,
-            msg.sender
+            (msg.sender, _approvers, approvalsRequired)
         );
 
         ParcelTransparentProxy proxy = new ParcelTransparentProxy{salt: salt}(
@@ -155,13 +149,10 @@ contract ParcelPayrollFactory is Ownable2Step {
             addressRegistry
         );
 
-        IParcelPayroll(address(proxy)).transferOwnership(msg.sender);
+        address proxyAddress = address(proxy);
 
-        if (address(proxy) != predictedAddress)
-            revert ProxyDoesntMatchPrediction(address(proxy), predictedAddress);
-
-        parcelAddress[msg.sender] = address(proxy);
-        emit OrgOnboarded(msg.sender, address(proxy), predictedAddress, _data);
+        parcelAddress[msg.sender] = proxyAddress;
+        emit OrgOnboarded(msg.sender, proxyAddress, logic, _data);
     }
 
     /**

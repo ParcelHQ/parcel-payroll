@@ -106,10 +106,11 @@ contract ParcelPayroll is
      * @param approvalsRequired - Number of approvals required for a payout to be executed
      */
     function initialize(
+        address safeAddress,
         address[] calldata _approvers,
         uint128 approvalsRequired
     ) external initializer {
-        __Ownable_init();
+        _transferOwnership(safeAddress);
         __Pausable_init();
         __ReentrancyGuard_init();
         __UUPSUpgradeable_init();
@@ -118,7 +119,7 @@ contract ParcelPayroll is
         _cachedThis = address(this);
 
         setupApprovers(_approvers, approvalsRequired);
-        emit OrgSetup(msg.sender, _approvers, approvalsRequired);
+        emit OrgSetup(safeAddress, _approvers, approvalsRequired);
     }
 
     /**
@@ -305,6 +306,13 @@ contract ParcelPayroll is
                         );
                     }
                 }
+            } else {
+                emit PayoutFailed(
+                    tokenAddress[i],
+                    to[i],
+                    amount[i],
+                    payoutNonce[i]
+                );
             }
         }
     }
