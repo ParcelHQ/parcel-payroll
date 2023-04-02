@@ -253,7 +253,7 @@ contract ApproverManager is OwnableUpgradeable {
             revert ThresholdTooHigh(_threshold, approverCount);
 
         // There has to be at least one Org approver.
-        if (threshold == 0) revert ThresholdTooLow(_threshold);
+        if (_threshold == 0) revert ThresholdTooLow(_threshold);
 
         threshold = _threshold;
         emit ChangedThreshold(threshold);
