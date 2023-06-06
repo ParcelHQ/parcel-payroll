@@ -7,15 +7,14 @@
 const hre = require("hardhat");
 
 async function main() {
-    const ParcelPayroll = await hre.ethers.getContractFactory("ParcelPayroll");
+    const [address] = await ethers.getSigners();
 
-    const payroll = await ParcelPayroll.deploy();
+    console.log({ address });
 
-    await payroll.deployed();
+    // Get Balance of the Address
+    const balance = await hre.ethers.provider.getBalance(address.address);
 
-    console.log(`ParcelPayroll is Deployed to ${payroll.address}`);
-
-    // Latest Deployed Implementation is at : 0x3B09Dbc8CA1eBac0CDe743C3A68c2b2d376Df0fa
+    console.log({ balance });
 }
 
 // We recommend this pattern to be able to use async/await everywhere
