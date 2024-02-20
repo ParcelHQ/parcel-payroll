@@ -10,6 +10,7 @@ module.exports = {
     etherscan: {
         apiKey: {
             goerli: process.env.ETHERSCAN_API_KEY,
+            sepolia: process.env.ETHERSCAN_API_KEY,
         },
     },
 
@@ -22,6 +23,12 @@ module.exports = {
         },
         goerli: {
             url: process.env.GOERLI_RPC,
+            accounts: process.env.MNEMONIC
+                ? { mnemonic: process.env.MNEMONIC }
+                : [],
+        },
+        sepolia: {
+            url: process.env.SEPOLIA_RPC,
             accounts: process.env.MNEMONIC
                 ? { mnemonic: process.env.MNEMONIC }
                 : [],
