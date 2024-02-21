@@ -11,7 +11,27 @@ module.exports = {
         apiKey: {
             goerli: process.env.ETHERSCAN_API_KEY,
             sepolia: process.env.ETHERSCAN_API_KEY,
+            base_sepolia: process.env.BASESCAN_API_KEY,
+            base: process.env.BASESCAN_API_KEY,
         },
+        customChains: [
+            {
+                network: "base_sepolia",
+                chainId: 84532,
+                urls: {
+                    apiURL: "https://api-sepolia.basescan.org/api",
+                    browserURL: "https://sepolia.basescan.org",
+                },
+            },
+            {
+                network: "base",
+                chainId: 8453,
+                urls: {
+                    apiURL: "https://api.basescan.org/api",
+                    browserURL: "https://basescan.org",
+                },
+            },
+        ],
     },
 
     networks: {
@@ -32,6 +52,16 @@ module.exports = {
             accounts: process.env.MNEMONIC
                 ? { mnemonic: process.env.MNEMONIC }
                 : [],
+        },
+        base_sepolia: {
+            // 84532
+            url: process.env.BASE_SEPOLIA_RPC,
+            accounts: [process.env.PARCEL_BASE_DEV_PK],
+        },
+        base: {
+            // 8453
+            url: process.env.BASE_RPC,
+            accounts: [process.env.BASE_PROD_PK],
         },
     },
 

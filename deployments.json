@@ -10,5 +10,24 @@
         "singleton": "0x439F90c8AB274B028234460AdFcc93655ddEcd5f",
         "address_registry": "0x0B2F0C81F3896DBA8802611827713B6fE18E323A",
         "factory": "0x44B881548625fb4C65889228D54C2B947Dd4206c"
-    }
+    },
+    "84532": [
+        {
+            "env": "dev",
+            "allowance_module": "0xE46FE78DBfCa5E835667Ba9dCd3F3315E7623F8a",
+            "singleton": "0x2D6009Ae38e9cddee35dDa06D9a9C49436267DE2",
+            "address_registry": "0x44B881548625fb4C65889228D54C2B947Dd4206c",
+            "factory": "0xbE15d7e9f6fA6FD8d13178f2a8a3a0768a9F6A04"
+        }
+    ],
+    "8453": [
+        {
+            "env": "prod",
+            "networkId": 8453,
+            "allowance_module": "0xE46FE78DBfCa5E835667Ba9dCd3F3315E7623F8a",
+            "singleton": "0x068E277120B4aC880c9B219a749C0529bE1AEcf4",
+            "address_registry": "0xeB23f25790f2e14E4b13f175443B44F24a630167",
+            "factory": "0xc7Ca7FF928D3C3182B4c041571D27c8dC81D831E"
+        }
+    ]
 }

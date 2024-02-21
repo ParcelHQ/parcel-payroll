@@ -4,6 +4,7 @@
 // You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
 // will compile your contracts, add the Hardhat Runtime Environment's members to the
 // global scope, and execute the script.
+const { parseEther, formatEther } = require("ethers/lib/utils");
 const hre = require("hardhat");
 
 async function main() {
@@ -14,7 +15,7 @@ async function main() {
     // Get Balance of the Address
     const balance = await hre.ethers.provider.getBalance(address.address);
 
-    console.log({ balance });
+    console.log({ balance: formatEther(balance) });
 }
 
 // We recommend this pattern to be able to use async/await everywhere

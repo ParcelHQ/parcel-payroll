@@ -11,8 +11,8 @@ async function main() {
         "ParcelPayrollFactory"
     );
     const factory = await ParcelPayrollFactory.deploy(
-        "0x8E8205261A561630755E3395aC4a27288532BdB1",
-        "0xd97eEe2c1FD746c55B37Ffe93Cf1b0655fC3C397"
+        "SINGLETON_ADDRESS",
+        "ADDRESS_REGISTRY_ADDRESS"
     );
 
     await factory.deployed();
